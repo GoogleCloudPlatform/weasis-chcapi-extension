@@ -10,7 +10,16 @@ It utilizes [DICOMweb REST API](https://cloud.google.com/healthcare/docs/how-tos
 ![Google Dicom Explorer](google_dicom_explorer.png)
 
 #### Setting up Google Cloud Healthcare API:
-* See https://cloud.google.com/healthcare/docs/ to get started.
+
+See https://cloud.google.com/healthcare/docs/ to get started.
+
+#### Installing plugin
+* Get the latest release JAR from the releases tab.
+* To install plugin into Weasis follow instruction at [installing plug-ins](https://nroduit.github.io/en/basics/customize/build-plugins/#install-plug-ins)
+section of Weasis documentation.
+* Run Weasis Viewer executable
+* Switch to **_Google Dicom Explorer_** tab and login using your Google Account
+* Explore your DICOM data
 
 #### Building plugin
 Weasis requires JDK8.
@@ -28,9 +37,4 @@ cd google-healthcare-weasis-plugin
 mvn clean install
 ```
 
-#### Installing plugin
-* To install plugin into Weasis follow instruction at [installing plug-ins](https://nroduit.github.io/en/basics/customize/build-plugins/#install-plug-ins)
-section of Weasis documentation.
-* Run Weasis Viewer executable
-* Switch to **_Google Dicom Explorer_** tab and login using your Google Account
-* Explore your DICOM data
+
