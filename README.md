@@ -1,7 +1,10 @@
-### About Weasis Google DICOM Plugin
+## About Weasis Google DICOM Plugin
+
 Plugin enables Weasis Viewer users access to [Google Cloud Healthcare API](https://cloud.google.com/healthcare) DICOM data.
 It utilizes [DICOMweb REST API](https://cloud.google.com/healthcare/docs/how-tos/dicomweb) to interact with Google Cloud services.
-#### Features
+
+### Features
+
 * Login using your Google account
 * Interactive exploration of Google Healthcare API Dicom stores
 * Download and display all kinds of DICOM data
@@ -9,19 +12,34 @@ It utilizes [DICOMweb REST API](https://cloud.google.com/healthcare/docs/how-tos
 
 ![Google Dicom Explorer](google_dicom_explorer.png)
 
+### Running the plugin
+
+The plugin runs as an extension to the main Weasis application, so first you
+need to download the main Weasis application from https://nroduit.github.io/en/.
+Then you need to have existing data in the Cloud Healthcare API and install the
+plugin to get up and running. Please see more detailed instructions below.
+
 #### Setting up Google Cloud Healthcare API:
 
 See https://cloud.google.com/healthcare/docs/ to get started.
 
 #### Installing plugin
-* Get the latest release JAR from the releases tab.
-* To install plugin into Weasis follow instruction at [installing plug-ins](https://nroduit.github.io/en/basics/customize/build-plugins/#install-plug-ins)
-section of Weasis documentation.
+
+* Get the latest release JAR from this repositories releases tab.
+* Follow instructions at [installing
+  plug-ins](https://nroduit.github.io/en/basics/customize/build-plugins/#install-plug-ins)
+  to add this plugin to Weasis.
 * Run Weasis Viewer executable
 * Switch to **_Google Dicom Explorer_** tab and login using your Google Account
-* Explore your DICOM data
 
-#### Building plugin
+NOTE: If you're running on Linux and find that Weasis is stuck loading plugins,
+check the terminal output for a link to sign-in with your Google account.
+
+### Building plugin
+
+If you're just trying to run the tool, please see the instructions above. If you
+need to recompile the plugin for any reason here are the steps to do so.
+
 Weasis requires JDK8.
 Plugin depends on core Weasis API, that's why you have to clone, build and install core Weasis modules to
 your local Maven repository first.
