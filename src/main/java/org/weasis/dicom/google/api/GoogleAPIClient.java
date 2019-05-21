@@ -39,8 +39,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
 import java.io.*;
-import java.net.URL;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -319,40 +319,32 @@ public class GoogleAPIClient {
     }
 
     private String formatQuery(StudyQuery query) {
-        String allItems = "?includefield=all";
-        if (query == null) {
-            return allItems;
-        }
-
         List<String> parameters = new ArrayList<>();
-        if (isNotBlank(query.getPatientName())) {
-            parameters.add("PatientName=" + urlEncode(query.getPatientName()));
-        }
 
-        if (isNotBlank(query.getPatientId())) {
-            parameters.add("PatientID=" + urlEncode(query.getPatientId()));
-        }
-
-        if (isNotBlank(query.getAccessionNumber())) {
-            parameters.add("AccessionNumber=" + urlEncode(query.getAccessionNumber()));
-        }
-
-        if (query.getStartDate() != null && query.getEndDate() != null) {
-            parameters.add("StudyDate="
-                    + urlEncode(DATE_FORMAT.format(query.getStartDate()))
-                    + "-" + urlEncode(DATE_FORMAT.format(query.getEndDate()))
-            );
-        }
-
-        if (isNotBlank(query.getPhysicianName())) {
-            parameters.add("ReferringPhysicianName=" + urlEncode(query.getPhysicianName()));
-        }
-
-        if (parameters.isEmpty()) {
-            return allItems;
+        if (Objects.nonNull(query)) {
+            if (isNotBlank(query.getPatientName())) {
+                parameters.add("PatientName=" + urlEncode(query.getPatientName()));
+                parameters.add("fuzzymatching=true");
+            }
+            if (isNotBlank(query.getPatientId())) {
+                parameters.add("PatientID=" + urlEncode(query.getPatientId()));
+            }
+            if (isNotBlank(query.getAccessionNumber())) {
+                parameters.add("AccessionNumber=" + urlEncode(query.getAccessionNumber()));
+            }
+            if (query.getStartDate() != null && query.getEndDate() != null) {
+                parameters.add("StudyDate="
+                        + urlEncode(DATE_FORMAT.format(query.getStartDate()))
+                        + "-" + urlEncode(DATE_FORMAT.format(query.getEndDate()))
+                );
+            }
+            if (isNotBlank(query.getPhysicianName())) {
+                parameters.add("ReferringPhysicianName=" + urlEncode(query.getPhysicianName()));
+            }
         } else {
-            return "?" + join(parameters, "&");
+            parameters.add("includefield=all");
         }
-    }
 
+        return "?" + join(parameters, "&");
+    }
 }
