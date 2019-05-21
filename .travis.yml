@@ -1,5 +1,5 @@
 language: java
-before_install:
+install:
     - git clone https://github.com/nroduit/Weasis.git
     - cd Weasis 
     - git checkout tags/3.0.4
