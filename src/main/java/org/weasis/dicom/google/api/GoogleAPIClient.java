@@ -39,8 +39,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
 import java.io.*;
-import java.net.URL;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -62,6 +62,7 @@ public class GoogleAPIClient {
             BundleTools.SYSTEM_PREFERENCES.getProperty("weasis.google.api.url", "https://healthcare.googleapis.com/v1beta1");
     private static final String SECRETS_FILE_NAME =
             BundleTools.SYSTEM_PREFERENCES.getProperty("weasis.google.secrets.filename", "client_secrets.json");
+    private static final int STUDIES_PAGE_SIZE = 5000;
     /**
      * Global instance of the {@link DataStoreFactory}. The best practice is to make
      * it a single globally shared instance across your application.
@@ -82,9 +83,9 @@ public class GoogleAPIClient {
      * OAuth 2.0 scopes.
      */
     private static final List<String> SCOPES = Arrays.asList(
-    		"https://www.googleapis.com/auth/cloud-healthcare",
-    		"https://www.googleapis.com/auth/cloudplatformprojects.readonly"
-    		);
+            "https://www.googleapis.com/auth/cloud-healthcare",
+            "https://www.googleapis.com/auth/cloudplatformprojects.readonly"
+    );
 
     private static Oauth2 oauth2;
     private static GoogleClientSecrets clientSecrets;
@@ -295,17 +296,24 @@ public class GoogleAPIClient {
     }
 
     public List<StudyModel> fetchStudies(DicomStore store, StudyQuery query) throws Exception {
+        return fetchStudies(store, query, 0);
+    }
+
+    public List<StudyModel> fetchStudies(DicomStore store, StudyQuery query, int offset) throws Exception {
         refresh();
         String url = GOOGLE_API_BASE_PATH
                 + "/projects/" + store.getProject().getId()
                 + "/locations/" + store.getLocation().getId()
                 + "/datasets/" + store.getParent().getName()
                 + "/dicomStores/" + store.getName()
-                + "/dicomWeb/studies" + formatQuery(query);
+                + "/dicomWeb/studies" + formatQuery(query, STUDIES_PAGE_SIZE, offset);
         String data = googleRequest(url).parseAsString();
         List<StudyModel> studies = objectMapper.readValue(data, new TypeReference<List<StudyModel>>() {
         });
-
+        if (studies.size() > 0) {
+            List<StudyModel> studiesAdditional = fetchStudies(store, query, offset + STUDIES_PAGE_SIZE);
+            studies.addAll(studiesAdditional);
+        }
         return studies;
     }
 
@@ -318,41 +326,36 @@ public class GoogleAPIClient {
                 + "/dicomWeb/studies/" + studyId;
     }
 
-    private String formatQuery(StudyQuery query) {
-        String allItems = "?includefield=all";
-        if (query == null) {
-            return allItems;
-        }
-
+    private String formatQuery(StudyQuery query, int limit, int offset) {
         List<String> parameters = new ArrayList<>();
-        if (isNotBlank(query.getPatientName())) {
-            parameters.add("PatientName=" + urlEncode(query.getPatientName()));
-        }
 
-        if (isNotBlank(query.getPatientId())) {
-            parameters.add("PatientID=" + urlEncode(query.getPatientId()));
-        }
-
-        if (isNotBlank(query.getAccessionNumber())) {
-            parameters.add("AccessionNumber=" + urlEncode(query.getAccessionNumber()));
-        }
-
-        if (query.getStartDate() != null && query.getEndDate() != null) {
-            parameters.add("StudyDate="
-                    + urlEncode(DATE_FORMAT.format(query.getStartDate()))
-                    + "-" + urlEncode(DATE_FORMAT.format(query.getEndDate()))
-            );
-        }
-
-        if (isNotBlank(query.getPhysicianName())) {
-            parameters.add("ReferringPhysicianName=" + urlEncode(query.getPhysicianName()));
-        }
-
-        if (parameters.isEmpty()) {
-            return allItems;
+        if (Objects.nonNull(query)) {
+            if (isNotBlank(query.getPatientName())) {
+                parameters.add("PatientName=" + urlEncode(query.getPatientName()));
+            }
+            if (isNotBlank(query.getPatientId())) {
+                parameters.add("PatientID=" + urlEncode(query.getPatientId()));
+            }
+            if (isNotBlank(query.getAccessionNumber())) {
+                parameters.add("AccessionNumber=" + urlEncode(query.getAccessionNumber()));
+            }
+            if (query.getStartDate() != null && query.getEndDate() != null) {
+                parameters.add("StudyDate="
+                        + urlEncode(DATE_FORMAT.format(query.getStartDate()))
+                        + "-" + urlEncode(DATE_FORMAT.format(query.getEndDate()))
+                );
+            }
+            if (isNotBlank(query.getPhysicianName())) {
+                parameters.add("ReferringPhysicianName=" + urlEncode(query.getPhysicianName()));
+            }
+            parameters.add("fuzzymatching=true");
         } else {
-            return "?" + join(parameters, "&");
+            parameters.add("includefield=all");
         }
+        parameters.add("offset=" + urlEncode(String.valueOf(offset)));
+        parameters.add("limit=" + urlEncode(String.valueOf(limit)));
+
+        return "?" + join(parameters, "&");
     }
 
 }
