@@ -25,6 +25,8 @@ public class StudyQuery {
 
     private String accessionNumber;
     private String physicianName;
+    private int page;
+    private int pageSize;
 
     public String getPatientName() {
         return patientName;
@@ -72,5 +74,21 @@ public class StudyQuery {
 
     public void setPhysicianName(String physicianName) {
         this.physicianName = physicianName;
+    }
+
+    public void setPage(int offset) {
+        this.page = offset;
+    }
+
+    public int getPage() {
+        return this.page;
+    }
+
+    public int setPageSize() {
+        return this.pageSize;
+    }
+
+    public void setPageSize(int pageSize) {
+        this.pageSize = pageSize;
     }
 }

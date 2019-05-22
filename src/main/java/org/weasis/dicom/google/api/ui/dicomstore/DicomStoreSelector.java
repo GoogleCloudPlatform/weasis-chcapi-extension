@@ -19,6 +19,7 @@ import org.weasis.dicom.google.api.model.Dataset;
 import org.weasis.dicom.google.api.model.DicomStore;
 import org.weasis.dicom.google.api.model.Location;
 import org.weasis.dicom.google.api.model.ProjectDescriptor;
+import org.weasis.dicom.google.api.model.StudyQuery;
 import org.weasis.dicom.google.api.ui.StudiesTable;
 import org.weasis.dicom.google.api.ui.StudyView;
 import org.slf4j.Logger;
@@ -222,11 +223,8 @@ public class DicomStoreSelector extends JPanel {
                         }
                 ).orElse(false)
         );
-
-        googleDicomstoreCombobox.addItemListener(this.<DicomStore>selectedListener(
-                store -> new LoadStudiesTask(store, googleAPIClient, this),
-                nothing -> updateTable(emptyList())
-        ));
+        googleDicomstoreCombobox.addItemListener(item ->
+                emitStoreUpdateUpdate(new StoreUpdateEvent(this)));
 
         AutoRefreshComboBoxExtension.wrap(googleDicomstoreCombobox, () ->
                 getSelectedItem(modelDataset).map(
@@ -239,10 +237,14 @@ public class DicomStoreSelector extends JPanel {
         );
     }
 
+    private LoadStudiesTask loadStudiesTask(DicomStore store, StudyQuery query) {
+        return new LoadStudiesTask(store, googleAPIClient, this, query);
+    }
+
     public void updateProjects(List<ProjectDescriptor> result) {
         projects = result;
         if (updateModel(result, modelProject)) {
-        	googleProjectCombobox.firstFocusGain = true;
+            googleProjectCombobox.firstFocusGain = true;
             JTextField textField = (JTextField) googleProjectCombobox.getEditor().getEditorComponent();
             textField.setText(DEFAULT_PROJECT_COMBOBOX_TEXT);
             updateLocations(emptyList());
@@ -273,7 +275,12 @@ public class DicomStoreSelector extends JPanel {
     }
 
     public Optional<DicomStore> getCurrentStore() {
-        return (Optional<DicomStore>) modelDicomstore.getSelectedItem();
+        Object store = modelDicomstore.getSelectedItem();
+        Optional<DicomStore> storeOptional = Optional.empty();
+        if (Objects.nonNull(store)) {
+            storeOptional = (Optional<DicomStore>) modelDicomstore.getSelectedItem();
+        }
+        return storeOptional;
     }
 
     /**
@@ -342,6 +349,25 @@ public class DicomStoreSelector extends JPanel {
                 .flatMap(x -> (Optional<T>) x);
     }
 
+    public void loadStudies(StudyQuery query) {
+        getCurrentStore().ifPresent((store) -> {
+            loadStudiesTask(store, query).execute();
+        });
+    }
+
+    public void emitStoreUpdateUpdate(StoreUpdateEvent evt) {
+        Object[] listeners = listenerList.getListenerList();
+        for (int i = 0; i < listeners.length; i = i + 2) {
+            if (listeners[i] == StoreUpdateListener.class) {
+                ((StoreUpdateListener) listeners[i + 1]).actionPerformed(evt);
+            }
+        }
+    }
+
+    public void addStoreListener(StoreUpdateListener listener) {
+        this.listenerList.add(StoreUpdateListener.class, listener);
+    }
+
     private class ListRenderer<T> implements ListCellRenderer<Optional<T>> {
 
         private final DefaultListCellRenderer renderer = new DefaultListCellRenderer();
@@ -374,11 +400,11 @@ public class DicomStoreSelector extends JPanel {
         }
 
         public void setItem(Object anObject) {
-            if (anObject != null) {  
+            if (anObject != null) {
                 Optional<ProjectDescriptor> item = anObject.getClass().equals(String.class) ? Optional.empty() : (Optional<ProjectDescriptor>) anObject;
-            	if (item.isPresent()) {
+                if (item.isPresent()) {
                     editor.setText(item.get().getName());
-            	}
+                }
             }
         }
     }
@@ -394,9 +420,9 @@ public class DicomStoreSelector extends JPanel {
         }
 
         public void search(String input) {
-        	if ((input == null && prevInput == null) || (input.toLowerCase().equals(prevInput.toLowerCase()))) {
-        		return;
-        	}
+            if ((input == null && prevInput == null) || (input.toLowerCase().equals(prevInput.toLowerCase()))) {
+                return;
+            }
             removeAllItems();
             List<ProjectDescriptor> updated = new ArrayList<>();
             for (int i = 0; i < projects.size(); i++) {

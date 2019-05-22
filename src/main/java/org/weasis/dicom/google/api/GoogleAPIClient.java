@@ -343,6 +343,13 @@ public class GoogleAPIClient {
                     + "-" + urlEncode(DATE_FORMAT.format(query.getEndDate()))
             );
         }
+        if (query.getPage()>=0){
+            parameters.add("offset=" + String.valueOf(query.getPage()*query.setPageSize()));
+        }
+
+        if (query.setPageSize()>0){
+            parameters.add("limit=" + String.valueOf(query.setPageSize()));
+        }
 
         if (isNotBlank(query.getPhysicianName())) {
             parameters.add("ReferringPhysicianName=" + urlEncode(query.getPhysicianName()));

@@ -40,11 +40,6 @@ public class LoadStudiesTask extends AbstractDicomSelectorTask<List<StudyView>> 
     private final DicomStore store;
     private final StudyQuery query;
 
-    public LoadStudiesTask(DicomStore store,
-                           GoogleAPIClient api,
-                           DicomStoreSelector view) {
-        this(store, api, view, null);
-    }
 
     public LoadStudiesTask(DicomStore store,
                            GoogleAPIClient api,

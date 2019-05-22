@@ -14,25 +14,15 @@
 
 package org.weasis.dicom.google.api.ui;
 
-import org.weasis.dicom.google.api.GoogleAPIClient;
 import org.weasis.dicom.google.api.model.StudyQuery;
 import org.weasis.dicom.google.api.ui.dicomstore.DicomStoreSelector;
-import org.weasis.dicom.google.api.ui.dicomstore.LoadStudiesTask;
 import org.jdatepicker.DateModel;
 import org.jdatepicker.impl.JDatePanelImpl;
 import org.jdatepicker.impl.JDatePickerImpl;
 import org.jdatepicker.impl.UtilDateModel;
 
+import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.BoxLayout;
-import javax.swing.Box;
-import javax.swing.BorderFactory;
-import javax.swing.JFormattedTextField;
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
-import javax.swing.SwingConstants;
 
 import java.awt.*;
 import java.text.ParseException;
@@ -45,7 +35,8 @@ import static javax.swing.BoxLayout.LINE_AXIS;
 import static javax.swing.BoxLayout.PAGE_AXIS;
 
 public class SearchPanel extends JPanel {
-
+    private static final int PAGE_SIZE=100;
+    private final JLabel pageNumberLabel = label("");
     private final JTextField patientName = textField();
     private final JTextField patientId = textField();
     private final JDatePickerImpl startDate = createDatePicker();
@@ -53,16 +44,16 @@ public class SearchPanel extends JPanel {
     private final JTextField accessionNumber = textField();
     private final JTextField referringPhd = textField();
 
-    private final GoogleAPIClient googleAPIClient;
     private final DicomStoreSelector storeSelector;
+    private int pageNumber =0;
 
-    public SearchPanel(GoogleAPIClient googleAPIClient, DicomStoreSelector storeSelector) {
-        this.googleAPIClient = googleAPIClient;
+    public SearchPanel(DicomStoreSelector storeSelector) {
         this.storeSelector = storeSelector;
         initSearchPanel();
     }
 
     private void initSearchPanel() {
+        this.storeSelector.addStoreListener((event) -> reloadTable());
         BoxLayout layout = new BoxLayout(this, PAGE_AXIS);
         setLayout(layout);
         Border border = BorderFactory.createCompoundBorder(
@@ -118,6 +109,7 @@ public class SearchPanel extends JPanel {
         reset.addActionListener((action) -> {
             clearSearchForm();
             reloadTable();
+            pageNumberLabel.setText("");
         });
         JPanel buttonPanel = new JPanel();
         BoxLayout buttonPanelLayout = new BoxLayout(buttonPanel, LINE_AXIS);
@@ -130,10 +122,25 @@ public class SearchPanel extends JPanel {
         add(Box.createVerticalGlue());
     }
 
-    private void reloadTable() {
-        storeSelector.getCurrentStore().ifPresent((store) -> {
-            new LoadStudiesTask(store, googleAPIClient, storeSelector, buildQuery()).execute();
-        });
+    public void loadTable(int page) {
+        storeSelector.loadStudies(buildQuery(page));
+    }
+
+    public void reloadTable() {
+        setPageNumber(0);
+        loadTable(pageNumber);
+    }
+
+
+    public void prevPage() {
+        if(this.pageNumber >0){
+            setPageNumber(pageNumber-1);
+            loadTable(pageNumber);
+        }
+    }
+    public void nextPage() {
+        setPageNumber(pageNumber+1);
+        loadTable(pageNumber);
     }
 
     private void clearSearchForm() {
@@ -145,12 +152,14 @@ public class SearchPanel extends JPanel {
         endDate.getModel().setSelected(false);
     }
 
-    private StudyQuery buildQuery() {
+    private StudyQuery buildQuery(int page) {
         StudyQuery query = new StudyQuery();
         query.setPatientName(patientName.getText());
         query.setPatientId(patientId.getText());
         query.setAccessionNumber(accessionNumber.getText());
         query.setPhysicianName(referringPhd.getText());
+        query.setPage(page);
+        query.setPageSize(PAGE_SIZE);
         DateModel<?> startDateModel = startDate.getModel();
         if (startDateModel.isSelected()) {
             query.setStartDate(LocalDate.of(startDateModel.getYear(), startDateModel.getMonth() + 1, startDateModel.getDay()));
@@ -190,6 +199,16 @@ public class SearchPanel extends JPanel {
 
         return result;
     }
+
+    private void setPageNumber(int pageNumber) {
+        this.pageNumber = pageNumber;
+        pageNumberLabel.setText(String.valueOf(pageNumber));
+    }
+
+    public JLabel getPageNumberLabel() {
+        return pageNumberLabel;
+    }
+
 
     public class DateLabelFormatter extends JFormattedTextField.AbstractFormatter {
 
