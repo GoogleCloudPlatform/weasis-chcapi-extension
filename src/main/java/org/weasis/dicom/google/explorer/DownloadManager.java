@@ -136,6 +136,7 @@ public class DownloadManager {
         private static File[] downloadFiles(String dicomUrl, String googleToken) {
             try {
                 HttpURLConnection httpConn = (HttpURLConnection) new URL(dicomUrl).openConnection();
+                httpConn.setRequestProperty("Accept", "multipart/related; type=application/dicom; transfer-syntax=*");
                 httpConn.setRequestProperty("Authorization", "Bearer " + googleToken);
                 int responseCode = httpConn.getResponseCode();
 
