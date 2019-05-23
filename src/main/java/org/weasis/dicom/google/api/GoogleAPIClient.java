@@ -16,15 +16,18 @@ package org.weasis.dicom.google.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.http.GenericUrl;
+import com.google.api.client.http.HttpHeaders;
+import com.google.api.client.http.HttpRequest;
+import com.google.api.client.http.HttpResponse;
+import com.google.api.client.http.HttpTransport;
 import org.weasis.core.api.service.BundleTools;
-import org.weasis.dicom.google.api.model.*;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
-import com.google.api.client.http.*;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.DataStoreFactory;
@@ -37,9 +40,18 @@ import com.google.api.services.oauth2.model.Tokeninfo;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import org.weasis.dicom.google.api.model.Dataset;
+import org.weasis.dicom.google.api.model.DicomStore;
+import org.weasis.dicom.google.api.model.Location;
+import org.weasis.dicom.google.api.model.ProjectDescriptor;
+import org.weasis.dicom.google.api.model.StudyModel;
+import org.weasis.dicom.google.api.model.StudyQuery;
 
-import java.io.*;
-import java.net.URL;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,7 +60,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static org.weasis.dicom.google.api.util.StringUtils.*;
+import static org.weasis.dicom.google.api.util.StringUtils.isNotBlank;
+import static org.weasis.dicom.google.api.util.StringUtils.join;
+import static org.weasis.dicom.google.api.util.StringUtils.urlEncode;
+
 
 public class GoogleAPIClient {
 
@@ -82,9 +97,9 @@ public class GoogleAPIClient {
      * OAuth 2.0 scopes.
      */
     private static final List<String> SCOPES = Arrays.asList(
-    		"https://www.googleapis.com/auth/cloud-healthcare",
-    		"https://www.googleapis.com/auth/cloudplatformprojects.readonly"
-    		);
+            "https://www.googleapis.com/auth/cloud-healthcare",
+            "https://www.googleapis.com/auth/cloudplatformprojects.readonly"
+    );
 
     private static Oauth2 oauth2;
     private static GoogleClientSecrets clientSecrets;
@@ -343,12 +358,16 @@ public class GoogleAPIClient {
                     + "-" + urlEncode(DATE_FORMAT.format(query.getEndDate()))
             );
         }
-        if (query.getPage()>=0){
-            parameters.add("offset=" + String.valueOf(query.getPage()*query.setPageSize()));
-        }
 
-        if (query.setPageSize()>0){
-            parameters.add("limit=" + String.valueOf(query.setPageSize()));
+        int pageNumber = query.getPage();
+        int pageSize = query.getPageSize();
+
+        if (pageSize > 0) {
+            parameters.add("limit=" + String.valueOf(pageSize));
+
+            if (pageNumber >= 0) {
+                parameters.add("offset=" + String.valueOf(pageNumber * pageSize));
+            }
         }
 
         if (isNotBlank(query.getPhysicianName())) {

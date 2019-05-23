@@ -84,7 +84,7 @@ public class StudyQuery {
         return this.page;
     }
 
-    public int setPageSize() {
+    public int getPageSize() {
         return this.pageSize;
     }
 

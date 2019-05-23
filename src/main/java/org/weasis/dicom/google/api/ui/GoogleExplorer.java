@@ -21,7 +21,9 @@ import org.weasis.dicom.google.explorer.DownloadManager;
 import javax.swing.JPanel;
 import javax.swing.BoxLayout;
 import javax.swing.Box;
-import java.awt.*;
+
+import java.awt.BorderLayout;
+import java.awt.Component;
 
 import static javax.swing.BoxLayout.PAGE_AXIS;
 

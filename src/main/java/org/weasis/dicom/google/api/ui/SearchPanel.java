@@ -21,10 +21,20 @@ import org.jdatepicker.impl.JDatePanelImpl;
 import org.jdatepicker.impl.JDatePickerImpl;
 import org.jdatepicker.impl.UtilDateModel;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JFormattedTextField;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -36,7 +46,7 @@ import static javax.swing.BoxLayout.PAGE_AXIS;
 
 public class SearchPanel extends JPanel {
     private static final int PAGE_SIZE=100;
-    private final JLabel pageNumberLabel = label("");
+    private final JLabel pageNumberLabel = label("0");
     private final JTextField patientName = textField();
     private final JTextField patientId = textField();
     private final JDatePickerImpl startDate = createDatePicker();
