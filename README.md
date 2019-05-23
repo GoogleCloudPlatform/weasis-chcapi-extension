@@ -16,6 +16,9 @@ It utilizes [DICOMweb REST API](https://cloud.google.com/healthcare/docs/how-tos
 
 The plugin runs as an extension to the main Weasis application, so first you
 need to download the main Weasis application from https://nroduit.github.io/en/.
+
+***Please note, latest supported release of Weasis is 3.0.4***
+
 Then you need to have existing data in the Cloud Healthcare API and install the
 plugin to get up and running. Please see more detailed instructions below.
 
@@ -42,7 +45,7 @@ need to recompile the plugin for any reason here are the steps to do so.
 
 Weasis requires JDK8.
 Plugin depends on core Weasis API, that's why you have to clone, build and install core Weasis modules to
-your local Maven repository first.
+your local Maven repository first
 For this purpose follow instructions at [building Weasis](https://nroduit.github.io/en/getting-started/building-weasis/).
 After Weasis artifacts installed to your local Maven repository plugin itself can be compiled
 Detailed build instruction can be found at
