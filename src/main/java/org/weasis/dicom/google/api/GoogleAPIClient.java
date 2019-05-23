@@ -327,7 +327,7 @@ public class GoogleAPIClient {
         List<String> parameters = new ArrayList<>();
         if (isNotBlank(query.getPatientName())) {
             parameters.add("PatientName=" + urlEncode(query.getPatientName()));
-            parameters.add("fuzzymatching=true");
+            parameters.add("fuzzymatching=" + (query.getFuzzyMatching() ? "true" : "false"));
         }
 
         if (isNotBlank(query.getPatientId())) {
