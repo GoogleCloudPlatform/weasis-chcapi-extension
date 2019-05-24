@@ -103,7 +103,7 @@ public class GoogleAPIClient {
     protected GoogleAPIClient() {
     }
 
-    private static void loadSecrets() throws GeneralSecurityException, IOException {
+    private static GoogleAuthorizationCodeFlow authorizationCodeFlow() throws GeneralSecurityException, IOException {
         httpTransport = GoogleNetHttpTransport.newTrustedTransport();
         dataStoreFactory = new FileDataStoreFactory(DATA_STORE_DIR);
 
@@ -114,14 +114,13 @@ public class GoogleAPIClient {
                 || clientSecrets.getDetails().getClientSecret().startsWith("Enter ")) {
             throw new RuntimeException(SECRETS_FILE_NAME + " not found");
         }
+        return new GoogleAuthorizationCodeFlow.Builder(httpTransport, JSON_FACTORY,
+                clientSecrets, SCOPES).setDataStoreFactory(dataStoreFactory).build();
     }
 
     private static Credential authorize() throws Exception {
-        // load client secrets
-        loadSecrets();
         // set up authorization code flow
-        GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(httpTransport, JSON_FACTORY,
-                clientSecrets, SCOPES).setDataStoreFactory(dataStoreFactory).build();
+        GoogleAuthorizationCodeFlow flow = authorizationCodeFlow();
         // authorize
         return new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("user");
     }
@@ -203,9 +202,7 @@ public class GoogleAPIClient {
     public boolean isAuthorized() {
         boolean isAuthorized;
         try {
-            loadSecrets();
-            GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(httpTransport, JSON_FACTORY,
-                    clientSecrets, SCOPES).setDataStoreFactory(dataStoreFactory).build();
+            GoogleAuthorizationCodeFlow flow = authorizationCodeFlow();
             isAuthorized = Objects.nonNull(flow.loadCredential("user"));
         } catch (IOException| GeneralSecurityException e) {
             isAuthorized = false;
