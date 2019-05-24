@@ -49,7 +49,7 @@ import static javax.swing.BoxLayout.X_AXIS;
 public class SearchPanel extends JPanel {
 
     private final JTextField patientName = textField();
-    private final JCheckBox fuzzyMatching = textBox("fuzzy match", true);
+    private final JCheckBox fuzzyMatching = textBox("fuzzy match", false);
     private final JTextField patientId = textField();
     private final JDatePickerImpl startDate = createDatePicker();
     private final JDatePickerImpl endDate = createDatePicker();
