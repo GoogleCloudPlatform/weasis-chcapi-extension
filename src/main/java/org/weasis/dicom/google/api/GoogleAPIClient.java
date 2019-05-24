@@ -331,7 +331,7 @@ public class GoogleAPIClient {
                 + "/dicomWeb/studies/" + studyId;
     }
 
-    private String formatQuery(StudyQuery query) {
+    public static String formatQuery(StudyQuery query) {
         String allItems = "?includefield=all";
         if (query == null) {
             return allItems;
@@ -340,6 +340,7 @@ public class GoogleAPIClient {
         List<String> parameters = new ArrayList<>();
         if (isNotBlank(query.getPatientName())) {
             parameters.add("PatientName=" + urlEncode(query.getPatientName()));
+            parameters.add("fuzzymatching=" + (query.getFuzzyMatching() ? "true" : "false"));
         }
 
         if (isNotBlank(query.getPatientId())) {

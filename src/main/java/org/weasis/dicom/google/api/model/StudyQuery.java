@@ -25,6 +25,7 @@ public class StudyQuery {
 
     private String accessionNumber;
     private String physicianName;
+    private boolean fuzzyMatching;
 
     public String getPatientName() {
         return patientName;
@@ -72,5 +73,13 @@ public class StudyQuery {
 
     public void setPhysicianName(String physicianName) {
         this.physicianName = physicianName;
+    }
+
+    public void setFuzzyMatching(boolean fuzzyMatching) {
+        this.fuzzyMatching = fuzzyMatching;
+    }
+
+    public boolean getFuzzyMatching() {
+        return fuzzyMatching;
     }
 }
