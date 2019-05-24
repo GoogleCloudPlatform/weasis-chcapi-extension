@@ -39,8 +39,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
 import java.io.*;
-import java.net.URL;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -318,7 +318,7 @@ public class GoogleAPIClient {
                 + "/dicomWeb/studies/" + studyId;
     }
 
-    private String formatQuery(StudyQuery query) {
+    public static String formatQuery(StudyQuery query) {
         String allItems = "?includefield=all";
         if (query == null) {
             return allItems;
@@ -327,6 +327,7 @@ public class GoogleAPIClient {
         List<String> parameters = new ArrayList<>();
         if (isNotBlank(query.getPatientName())) {
             parameters.add("PatientName=" + urlEncode(query.getPatientName()));
+            parameters.add("fuzzymatching=" + (query.getFuzzyMatching() ? "true" : "false"));
         }
 
         if (isNotBlank(query.getPatientId())) {
@@ -354,5 +355,5 @@ public class GoogleAPIClient {
             return "?" + join(parameters, "&");
         }
     }
-
 }
+

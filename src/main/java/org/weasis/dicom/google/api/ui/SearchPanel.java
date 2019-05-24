@@ -23,6 +23,7 @@ import org.jdatepicker.impl.JDatePanelImpl;
 import org.jdatepicker.impl.JDatePickerImpl;
 import org.jdatepicker.impl.UtilDateModel;
 
+import javax.swing.JCheckBox;
 import javax.swing.border.Border;
 import javax.swing.BoxLayout;
 import javax.swing.Box;
@@ -43,10 +44,12 @@ import java.util.Properties;
 
 import static javax.swing.BoxLayout.LINE_AXIS;
 import static javax.swing.BoxLayout.PAGE_AXIS;
+import static javax.swing.BoxLayout.X_AXIS;
 
 public class SearchPanel extends JPanel {
 
     private final JTextField patientName = textField();
+    private final JCheckBox fuzzyMatching = textBox("fuzzy match", false);
     private final JTextField patientId = textField();
     private final JDatePickerImpl startDate = createDatePicker();
     private final JDatePickerImpl endDate = createDatePicker();
@@ -91,6 +94,11 @@ public class SearchPanel extends JPanel {
         JLabel patientNameLabel = label("Patient Name");
         add(patientNameLabel);
         add(patientName);
+        JPanel fuzzyMatchingPanel = new JPanel();
+        BoxLayout fuzzyMatchingPanelLayout = new BoxLayout(fuzzyMatchingPanel, X_AXIS);
+        fuzzyMatchingPanel.setLayout(fuzzyMatchingPanelLayout);
+        fuzzyMatchingPanel.add(fuzzyMatching);
+        add(fuzzyMatchingPanel);
 
         add(Box.createVerticalStrut(20));
 
@@ -148,6 +156,7 @@ public class SearchPanel extends JPanel {
     private StudyQuery buildQuery() {
         StudyQuery query = new StudyQuery();
         query.setPatientName(patientName.getText());
+        query.setFuzzyMatching(fuzzyMatching.isSelected());
         query.setPatientId(patientId.getText());
         query.setAccessionNumber(accessionNumber.getText());
         query.setPhysicianName(referringPhd.getText());
@@ -180,6 +189,13 @@ public class SearchPanel extends JPanel {
                 new Dimension(Integer.MAX_VALUE, result.getPreferredSize().height));
 
         return result;
+    }
+
+    private JCheckBox textBox(String text, boolean selected) {
+        JCheckBox checkBox = new JCheckBox(text, selected);
+        checkBox.setMaximumSize(
+                new Dimension(Integer.MAX_VALUE, checkBox.getPreferredSize().height));
+        return checkBox;
     }
 
     private JLabel label(String text) {
