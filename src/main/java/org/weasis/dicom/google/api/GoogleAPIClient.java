@@ -39,11 +39,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
 import java.io.*;
-import java.net.URL;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -126,7 +124,7 @@ public class GoogleAPIClient {
 
         String portableDir = System.getProperty("weasis.portable.dir");
         if (portableDir != null) {
-            File portableSecrets = new File(portableDir + File.separator + SECRETS_FILE_NAME);
+            File portableSecrets = new File(portableDir, SECRETS_FILE_NAME);
             if (portableSecrets.exists() && !portableSecrets.isDirectory()) {
                 return new FileInputStream(portableSecrets);
             }
@@ -238,19 +236,32 @@ public class GoogleAPIClient {
         return name.substring(name.lastIndexOf("/") + 1);
     }
 
-    private HttpResponse googleRequest(String url) throws Exception {
-        refresh();
-        HttpRequest request = httpTransport.createRequestFactory().buildGetRequest(new GenericUrl(url));
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", Collections.singletonList("Bearer " + accessToken));
+    public HttpResponse executeGetRequest(String url) throws IOException {
+		signIn();
+    	try {
+        	return doExecuteGetRequest(url);
+    	} catch (HttpResponseException e) {
+    		// Token expired?
+    		if (e.getStatusCode() == HttpStatusCodes.STATUS_CODE_UNAUTHORIZED) {
+    			// Refresh token and try again
+    			refresh();
+    			return doExecuteGetRequest(url);
+    		}
+    		throw e;
+    	}
+    }
+    
+    private HttpResponse doExecuteGetRequest(String url) throws IOException {
+        final HttpRequest request = httpTransport.createRequestFactory().buildGetRequest(new GenericUrl(url));
+        final HttpHeaders headers = new HttpHeaders();
+        headers.setAuthorization("Bearer " + accessToken);
         request.setHeaders(headers);
         return request.execute();
     }
 
     public List<org.weasis.dicom.google.api.model.Location> fetchLocations(ProjectDescriptor project) throws Exception {
-        refresh();
         String url = GOOGLE_API_BASE_PATH + "/projects/" + project.getId() + "/locations";
-        String data = googleRequest(url).parseAsString();
+        String data = executeGetRequest(url).parseAsString();
         JsonParser parser = new JsonParser();
         JsonElement jsonTree = parser.parse(data);
         JsonArray jsonObject = jsonTree.getAsJsonObject().get("locations").getAsJsonArray();
@@ -263,9 +274,8 @@ public class GoogleAPIClient {
     }
 
     public List<Dataset> fetchDatasets(Location location) throws Exception {
-        refresh();
         String url = GOOGLE_API_BASE_PATH + "/projects/" + location.getParent().getId() + "/locations/" + location.getId() + "/datasets";
-        String data = googleRequest(url).parseAsString();
+        String data = executeGetRequest(url).parseAsString();
         JsonParser parser = new JsonParser();
         JsonElement jsonTree = parser.parse(data);
         JsonArray jsonObject = jsonTree.getAsJsonObject().get("datasets").getAsJsonArray();
@@ -277,12 +287,11 @@ public class GoogleAPIClient {
     }
 
     public List<DicomStore> fetchDicomstores(Dataset dataset) throws Exception {
-        refresh();
         String url = GOOGLE_API_BASE_PATH
                 + "/projects/" + dataset.getProject().getId()
                 + "/locations/" + dataset.getParent().getId()
                 + "/datasets/" + dataset.getName() + "/dicomStores";
-        String data = googleRequest(url).parseAsString();
+        String data = executeGetRequest(url).parseAsString();
         JsonParser parser = new JsonParser();
         JsonElement jsonTree = parser.parse(data);
         JsonArray jsonObject = jsonTree.getAsJsonObject().get("dicomStores").getAsJsonArray();
@@ -295,14 +304,13 @@ public class GoogleAPIClient {
     }
 
     public List<StudyModel> fetchStudies(DicomStore store, StudyQuery query) throws Exception {
-        refresh();
         String url = GOOGLE_API_BASE_PATH
                 + "/projects/" + store.getProject().getId()
                 + "/locations/" + store.getLocation().getId()
                 + "/datasets/" + store.getParent().getName()
                 + "/dicomStores/" + store.getName()
                 + "/dicomWeb/studies" + formatQuery(query);
-        String data = googleRequest(url).parseAsString();
+        String data = executeGetRequest(url).parseAsString();
         List<StudyModel> studies = objectMapper.readValue(data, new TypeReference<List<StudyModel>>() {
         });
 
