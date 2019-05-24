@@ -63,13 +63,11 @@ public class DicomStoreSelector extends JPanel {
     private static final Logger log = LoggerFactory.getLogger(DicomStoreSelector.class);
 
     private static final String TEXT_GOOGLE_SIGN_IN = Messages.getString("DicomStoreSelector.sign_in"); //$NON-NLS-1$
-    private static final String TEXT_GOOGLE_SIGN_OUT = Messages.getString("DicomStoreSelector.sign_out"); //$NON-NLS-1$
     private static final String DEFAULT_PROJECT_COMBOBOX_TEXT = Messages.getString("DicomStoreSelector.default_project_text"); //$NON-NLS-1$
     private static final String DEFAULT_LOCATION_COMBOBOX_TEXT = Messages.getString("DicomStoreSelector.default_location_text"); //$NON-NLS-1$
     private static final String DEFAULT_DATASET_COMBOBOX_TEXT = Messages.getString("DicomStoreSelector.default_dataset_text"); //$NON-NLS-1$
     private static final String DEFAULT_DICOMSTORE_COMBOBOX_TEXT = Messages.getString("DicomStoreSelector.default_dicomstore_text"); //$NON-NLS-1$
-    private static final String ACTION_SIGN_IN = "signIn";
-    private static final String ACTION_SIGN_OUT = "signOut";
+    private static final String ACTION_SIGN_IN = Messages.getString("DicomStoreSelector.sign_in");
 
     private final GoogleAPIClient googleAPIClient;
 
@@ -81,24 +79,32 @@ public class DicomStoreSelector extends JPanel {
     private final StudiesTable table;
     private List<ProjectDescriptor> projects;
     private final JProjectComboBox<Optional<ProjectDescriptor>> googleProjectCombobox = new JProjectComboBox<>(modelProject);
+    private final JComboBox<Optional<Location>> googleLocationCombobox = new JComboBox<>(modelLocation);
+    private final JComboBox<Optional<Dataset>> googleDatasetCombobox = new JComboBox<>(modelDataset);
+    private final JComboBox<Optional<DicomStore>> googleDicomstoreCombobox = new JComboBox<>(modelDicomstore);
+    private final JButton googleAuthButton = new JButton();
+
 
     private void processSignedIn(JButton googleAuthButton) {
-        try {
-            googleAPIClient.signIn();
-            googleAuthButton.setText(TEXT_GOOGLE_SIGN_OUT);
-            googleAuthButton.setActionCommand(ACTION_SIGN_OUT);
-            new LoadProjectsTask(googleAPIClient, this).execute();
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(null,
-                    "Error occured on fetching google API.\n" +
-                            "Make sure you created OAuth Client ID credential \n" +
-                            "in Google Cloud console at https://console.cloud.google.com/apis/credentials \n" +
-                            "and copied your client_secrets.json to Weasis root folder.\n" +
-                            "Error message:" + ex.getCause().getMessage());
-            googleAPIClient.signOut();
-            googleAuthButton.setText(TEXT_GOOGLE_SIGN_IN);
-            googleAuthButton.setActionCommand(ACTION_SIGN_IN);
-        }
+        new GoogleLoginTask(googleAPIClient, googleAuthButton, this).execute();
+    }
+
+    private void toLogoutState(){
+        System.out.println();
+        System.out.println(TEXT_GOOGLE_SIGN_IN);
+        googleAuthButton.setText(TEXT_GOOGLE_SIGN_IN);
+        googleAuthButton.setActionCommand(ACTION_SIGN_IN);
+        googleProjectCombobox.setEnabled(false);
+        googleLocationCombobox.setEnabled(false);
+        googleDatasetCombobox.setEnabled(false);
+        googleDicomstoreCombobox.setEnabled(false);
+        modelProject.removeAllElements();
+        modelLocation.removeAllElements();
+        modelDataset.removeAllElements();
+        modelDicomstore.removeAllElements();
+        table.clearTable();
+        JTextField textField = (JTextField) googleProjectCombobox.getEditor().getEditorComponent();
+        textField.setText("");
     }
 
     public DicomStoreSelector(GoogleAPIClient googleAPIClient, StudiesTable table) {
@@ -108,36 +114,22 @@ public class DicomStoreSelector extends JPanel {
         BoxLayout layout = new BoxLayout(this, BoxLayout.X_AXIS);
         setLayout(layout);
 
-        JComboBox<Optional<Location>> googleLocationCombobox = new JComboBox<>(modelLocation);
-        JComboBox<Optional<Dataset>> googleDatasetCombobox = new JComboBox<>(modelDataset);
-        JComboBox<Optional<DicomStore>> googleDicomstoreCombobox = new JComboBox<>(modelDicomstore);
-
         googleProjectCombobox.setPrototypeDisplayValue(Optional.empty());
         googleLocationCombobox.setPrototypeDisplayValue(Optional.empty());
         googleDatasetCombobox.setPrototypeDisplayValue(Optional.empty());
         googleDicomstoreCombobox.setPrototypeDisplayValue(Optional.empty());
 
-        JButton googleAuthButton = new JButton();
         if (googleAPIClient.isAuthorized()) {
             processSignedIn(googleAuthButton);
         } else {
-            googleAuthButton.setText(TEXT_GOOGLE_SIGN_IN);
-            googleAuthButton.setActionCommand(ACTION_SIGN_IN);
+            toLogoutState();
         }
         googleAuthButton.addActionListener(e -> {
-            if (e.getActionCommand().equals(ACTION_SIGN_IN)) {
+            if (!googleAPIClient.isAuthorized()) {
                 processSignedIn(googleAuthButton);
             } else {
                 googleAPIClient.signOut();
-                googleAuthButton.setText(TEXT_GOOGLE_SIGN_IN);
-                googleAuthButton.setActionCommand(ACTION_SIGN_IN);
-                modelProject.removeAllElements();
-                modelLocation.removeAllElements();
-                modelDataset.removeAllElements();
-                modelDicomstore.removeAllElements();
-                table.clearTable();
-                JTextField textField = (JTextField) googleProjectCombobox.getEditor().getEditorComponent();
-                textField.setText("");
+                toLogoutState();
             }
         });
 
@@ -169,7 +161,6 @@ public class DicomStoreSelector extends JPanel {
             return true;
         });
 
-        googleProjectCombobox.setEditable(true);
         googleProjectCombobox.setEditor(new JProjectComboBoxEditor(DEFAULT_PROJECT_COMBOBOX_TEXT));
         googleProjectCombobox.getEditor().getEditorComponent().addMouseListener(new MouseAdapter() {
             @Override
@@ -240,9 +231,10 @@ public class DicomStoreSelector extends JPanel {
     }
 
     public void updateProjects(List<ProjectDescriptor> result) {
+        googleProjectCombobox.setEnabled(true);
         projects = result;
         if (updateModel(result, modelProject)) {
-        	googleProjectCombobox.firstFocusGain = true;
+            googleProjectCombobox.firstFocusGain = true;
             JTextField textField = (JTextField) googleProjectCombobox.getEditor().getEditorComponent();
             textField.setText(DEFAULT_PROJECT_COMBOBOX_TEXT);
             updateLocations(emptyList());
@@ -250,18 +242,21 @@ public class DicomStoreSelector extends JPanel {
     }
 
     public void updateLocations(List<Location> result) {
+        googleLocationCombobox.setEnabled(true);
         if (updateModel(result, modelLocation)) {
             updateDatasets(emptyList());
         }
     }
 
     public void updateDatasets(List<Dataset> result) {
+        googleDatasetCombobox.setEnabled(true);
         if (updateModel(result, modelDataset)) {
             updateDicomStores(emptyList());
         }
     }
 
     public void updateDicomStores(List<DicomStore> result) {
+        googleDicomstoreCombobox.setEnabled(true);
         if (updateModel(result, modelDicomstore)) {
             updateTable(emptyList());
         }
@@ -374,7 +369,7 @@ public class DicomStoreSelector extends JPanel {
         }
 
         public void setItem(Object anObject) {
-            if (anObject != null) {  
+            if (anObject != null) {
                 Optional<ProjectDescriptor> item = anObject.getClass().equals(String.class) ? Optional.empty() : (Optional<ProjectDescriptor>) anObject;
             	if (item.isPresent()) {
                     editor.setText(item.get().getName());

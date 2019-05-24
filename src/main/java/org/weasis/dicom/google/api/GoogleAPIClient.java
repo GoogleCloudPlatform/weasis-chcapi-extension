@@ -39,8 +39,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
 import java.io.*;
-import java.net.URL;
+import java.security.GeneralSecurityException;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -102,8 +103,10 @@ public class GoogleAPIClient {
     protected GoogleAPIClient() {
     }
 
-    private static Credential authorize() throws Exception {
-        // load client secrets
+    private static void loadSecrets() throws GeneralSecurityException, IOException {
+        httpTransport = GoogleNetHttpTransport.newTrustedTransport();
+        dataStoreFactory = new FileDataStoreFactory(DATA_STORE_DIR);
+
         try (InputStream in = getSecret()) {
             clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
         }
@@ -111,6 +114,11 @@ public class GoogleAPIClient {
                 || clientSecrets.getDetails().getClientSecret().startsWith("Enter ")) {
             throw new RuntimeException(SECRETS_FILE_NAME + " not found");
         }
+    }
+
+    private static Credential authorize() throws Exception {
+        // load client secrets
+        loadSecrets();
         // set up authorization code flow
         GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(httpTransport, JSON_FACTORY,
                 clientSecrets, SCOPES).setDataStoreFactory(dataStoreFactory).build();
@@ -150,8 +158,6 @@ public class GoogleAPIClient {
             do {
                 try {
                     tryCount++;
-                    httpTransport = GoogleNetHttpTransport.newTrustedTransport();
-                    dataStoreFactory = new FileDataStoreFactory(DATA_STORE_DIR);
                     // authorization
                     Credential credential = authorize();
                     // set up global Oauth2 instance
@@ -190,11 +196,21 @@ public class GoogleAPIClient {
     }
 
     private void clearSignIn() {
+        accessToken = null;
         deleteDir(DATA_STORE_DIR);
     }
 
     public boolean isAuthorized() {
-        return DATA_STORE_DIR.isDirectory() && DATA_STORE_DIR.list().length > 0;
+        boolean isAuthorized;
+        try {
+            loadSecrets();
+            GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(httpTransport, JSON_FACTORY,
+                    clientSecrets, SCOPES).setDataStoreFactory(dataStoreFactory).build();
+            isAuthorized = Objects.nonNull(flow.loadCredential("user"));
+        } catch (IOException| GeneralSecurityException e) {
+            isAuthorized = false;
+        }
+        return isAuthorized;
     }
 
     private void deleteDir(File file) {
@@ -354,5 +370,5 @@ public class GoogleAPIClient {
             return "?" + join(parameters, "&");
         }
     }
-
 }
+
