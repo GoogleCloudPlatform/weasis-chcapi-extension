@@ -318,7 +318,7 @@ public class GoogleAPIClient {
                 + "/dicomWeb/studies/" + studyId;
     }
 
-    private String formatQuery(StudyQuery query) {
+    public static String formatQuery(StudyQuery query) {
         String allItems = "?includefield=all";
         if (query == null) {
             return allItems;
