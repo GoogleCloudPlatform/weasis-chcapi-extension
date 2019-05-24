@@ -67,7 +67,7 @@ public class GoogleExplorer extends JPanel {
                 .map(store -> GoogleAPIClient.getImageUrl(store, studyId))
                 .ifPresent(image -> {
                 	DownloadManager.getLoadingExecutor().submit(
-                        new DownloadManager.LoadGoogleDicom(image,  null, googleAPIClient.getAccessToken(), new DownloadManager.DownloadListener() {
+                        new DownloadManager.LoadGoogleDicom(image,  null, googleAPIClient, new DownloadManager.DownloadListener() {
 							@Override
 							public void downloadFinished() {
 								table.hideLoadIcon(studyId);

@@ -28,13 +28,15 @@ import org.weasis.core.ui.editor.ViewerPluginBuilder;
 import org.weasis.dicom.codec.DicomMediaIO;
 import org.weasis.dicom.codec.DicomCodec;
 import org.weasis.dicom.codec.TagD;
+import org.weasis.dicom.google.api.GoogleAPIClient;
+
+import com.google.api.client.http.HttpResponse;
 
 import javax.swing.SwingWorker;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
@@ -54,7 +56,7 @@ public class DownloadManager {
     public static class LoadGoogleDicom extends SwingWorker<Boolean, Void> {
 
         private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(LoadGoogleDicom.class);
-        private final String accessToken;
+        private final GoogleAPIClient client;
         private File[] files;
         private final String url;
         private final FileModel dicomModel;
@@ -63,10 +65,10 @@ public class DownloadManager {
         private DownloadListener downloadListener;
 
 
-        public LoadGoogleDicom(String url, DataExplorerModel explorerModel, String accessToken, DownloadListener listener) {
+        public LoadGoogleDicom(String url, DataExplorerModel explorerModel, GoogleAPIClient client, DownloadListener listener) {
             this.url = url;
             this.dicomModel = ViewerPluginBuilder.DefaultDataModel;
-            this.accessToken = accessToken;
+            this.client = client;
             this.downloadListener = listener;
         }
 
@@ -80,7 +82,7 @@ public class DownloadManager {
                 files = fileCache.get(url);
             } else {
                 LOGGER.info("Loading from Google Healthcare API");
-                files = downloadFiles(url, accessToken);
+                files = downloadFiles(url);
                 fileCache.put(url, files);
             }
             LOGGER.debug(Arrays.stream(files).map(f -> f.getName()).collect(Collectors.joining("\n")));
@@ -133,14 +135,13 @@ public class DownloadManager {
             ViewerPluginBuilder.openSequenceInDefaultPlugin(dicomSeries, dicomModel, true, true);
         }
 
-        private static File[] downloadFiles(String dicomUrl, String googleToken) {
+        private File[] downloadFiles(String dicomUrl) {
             try {
-                HttpURLConnection httpConn = (HttpURLConnection) new URL(dicomUrl).openConnection();
-                httpConn.setRequestProperty("Authorization", "Bearer " + googleToken);
-                int responseCode = httpConn.getResponseCode();
-
+            	final HttpResponse response = client.executeGetRequest(dicomUrl);
+            	final int responseCode = response.getStatusCode();
+            	
                 if (responseCode == HttpURLConnection.HTTP_OK) {
-                    String contentType = httpConn.getContentType();
+                    String contentType = response.getContentType();
                     //find multipart boundary of multipart/related response
                     int indexStart = contentType.indexOf("boundary=") + 9;
                     int indexEnd = contentType.indexOf(";", indexStart + 1);
@@ -149,7 +150,7 @@ public class DownloadManager {
                     }
                     String boundary = contentType.substring(indexStart, indexEnd);
 
-                    MultipartStream multipart = new MultipartStream(httpConn.getInputStream(), boundary.getBytes());
+                    MultipartStream multipart = new MultipartStream(response.getContent(), boundary.getBytes());
                     boolean nextPart = multipart.skipPreamble();
 
                     ArrayList<File> files = new ArrayList<>();
