@@ -29,7 +29,7 @@ import org.weasis.dicom.codec.DicomMediaIO;
 import org.weasis.dicom.codec.DicomCodec;
 import org.weasis.dicom.codec.TagD;
 import org.weasis.dicom.google.api.GoogleAPIClient;
-
+import com.google.api.client.http.HttpHeaders;
 import com.google.api.client.http.HttpResponse;
 
 import javax.swing.SwingWorker;
@@ -137,7 +137,9 @@ public class DownloadManager {
 
         private File[] downloadFiles(String dicomUrl) {
             try {
-            	final HttpResponse response = client.executeGetRequest(dicomUrl);
+                final HttpHeaders headers = new HttpHeaders();
+                headers.setAccept("multipart/related; type=application/dicom; transfer-syntax=*");
+            	final HttpResponse response = client.executeGetRequest(dicomUrl, headers);
             	final int responseCode = response.getStatusCode();
             	
                 if (responseCode == HttpURLConnection.HTTP_OK) {

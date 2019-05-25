@@ -237,23 +237,26 @@ public class GoogleAPIClient {
     }
 
     public HttpResponse executeGetRequest(String url) throws IOException {
-		signIn();
-    	try {
-        	return doExecuteGetRequest(url);
-    	} catch (HttpResponseException e) {
-    		// Token expired?
-    		if (e.getStatusCode() == HttpStatusCodes.STATUS_CODE_UNAUTHORIZED) {
-    			// Refresh token and try again
-    			refresh();
-    			return doExecuteGetRequest(url);
-    		}
-    		throw e;
-    	}
+      return executeGetRequest(url, new HttpHeaders());
     }
     
-    private HttpResponse doExecuteGetRequest(String url) throws IOException {
+    public HttpResponse executeGetRequest(String url, HttpHeaders headers) throws IOException {
+      signIn();
+      try {
+        return doExecuteGetRequest(url, headers);
+      } catch (HttpResponseException e) {
+        // Token expired?
+        if (e.getStatusCode() == HttpStatusCodes.STATUS_CODE_UNAUTHORIZED) {
+          // Refresh token and try again
+          refresh();
+          return doExecuteGetRequest(url, headers);
+        }
+        throw e;
+      }
+    }
+    
+    private HttpResponse doExecuteGetRequest(String url, HttpHeaders headers) throws IOException {
         final HttpRequest request = httpTransport.createRequestFactory().buildGetRequest(new GenericUrl(url));
-        final HttpHeaders headers = new HttpHeaders();
         headers.setAuthorization("Bearer " + accessToken);
         request.setHeaders(headers);
         return request.execute();
@@ -326,7 +329,7 @@ public class GoogleAPIClient {
                 + "/dicomWeb/studies/" + studyId;
     }
 
-    private String formatQuery(StudyQuery query) {
+    public static String formatQuery(StudyQuery query) {
         String allItems = "?includefield=all";
         if (query == null) {
             return allItems;
@@ -335,6 +338,7 @@ public class GoogleAPIClient {
         List<String> parameters = new ArrayList<>();
         if (isNotBlank(query.getPatientName())) {
             parameters.add("PatientName=" + urlEncode(query.getPatientName()));
+            parameters.add("fuzzymatching=" + (query.getFuzzyMatching() ? "true" : "false"));
         }
 
         if (isNotBlank(query.getPatientId())) {
@@ -362,5 +366,5 @@ public class GoogleAPIClient {
             return "?" + join(parameters, "&");
         }
     }
-
 }
+
