@@ -90,8 +90,6 @@ public class DicomStoreSelector extends JPanel {
     }
 
     private void toLogoutState(){
-        System.out.println();
-        System.out.println(TEXT_GOOGLE_SIGN_IN);
         googleAuthButton.setText(TEXT_GOOGLE_SIGN_IN);
         googleAuthButton.setActionCommand(ACTION_SIGN_IN);
         googleProjectCombobox.setEnabled(false);
