@@ -53,6 +53,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -97,9 +98,9 @@ public class GoogleAPIClient {
      * OAuth 2.0 scopes.
      */
     private static final List<String> SCOPES = Arrays.asList(
-            "https://www.googleapis.com/auth/cloud-healthcare",
-            "https://www.googleapis.com/auth/cloudplatformprojects.readonly"
-    );
+    		"https://www.googleapis.com/auth/cloud-healthcare",
+    		"https://www.googleapis.com/auth/cloudplatformprojects.readonly"
+    		);
 
     private static Oauth2 oauth2;
     private static GoogleClientSecrets clientSecrets;
@@ -333,15 +334,16 @@ public class GoogleAPIClient {
                 + "/dicomWeb/studies/" + studyId;
     }
 
-    private String formatQuery(StudyQuery query) {
+    public static String formatQuery(StudyQuery query) {
         String allItems = "?includefield=all";
-        if (query == null) {
+        if (Objects.isNull(query)) {
             return allItems;
         }
 
         List<String> parameters = new ArrayList<>();
         if (isNotBlank(query.getPatientName())) {
             parameters.add("PatientName=" + urlEncode(query.getPatientName()));
+            parameters.add("fuzzymatching=" + (query.getFuzzyMatching() ? "true" : "false"));
         }
 
         if (isNotBlank(query.getPatientId())) {
@@ -380,5 +382,5 @@ public class GoogleAPIClient {
             return "?" + join(parameters, "&");
         }
     }
-
 }
+

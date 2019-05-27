@@ -27,6 +27,7 @@ public class StudyQuery {
     private String physicianName;
     private int page;
     private int pageSize;
+    private boolean fuzzyMatching;
 
     public String getPatientName() {
         return patientName;
@@ -90,5 +91,13 @@ public class StudyQuery {
 
     public void setPageSize(int pageSize) {
         this.pageSize = pageSize;
+    }
+
+    public void setFuzzyMatching(boolean fuzzyMatching) {
+        this.fuzzyMatching = fuzzyMatching;
+    }
+
+    public boolean getFuzzyMatching() {
+        return fuzzyMatching;
     }
 }

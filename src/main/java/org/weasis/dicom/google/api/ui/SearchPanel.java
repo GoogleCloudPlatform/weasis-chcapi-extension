@@ -21,16 +21,17 @@ import org.jdatepicker.impl.JDatePanelImpl;
 import org.jdatepicker.impl.JDatePickerImpl;
 import org.jdatepicker.impl.UtilDateModel;
 
-import javax.swing.BorderFactory;
-import javax.swing.Box;
+import javax.swing.JCheckBox;
+import javax.swing.border.Border;
 import javax.swing.BoxLayout;
-import javax.swing.JButton;
+import javax.swing.Box;
+import javax.swing.BorderFactory;
 import javax.swing.JFormattedTextField;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
-import javax.swing.border.Border;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -43,11 +44,18 @@ import java.util.Properties;
 
 import static javax.swing.BoxLayout.LINE_AXIS;
 import static javax.swing.BoxLayout.PAGE_AXIS;
+import static javax.swing.BoxLayout.X_AXIS;
 
 public class SearchPanel extends JPanel {
     private static final int PAGE_SIZE=100;
-    private final JLabel pageNumberLabel = label("0");
+    private static final int DEFAULT_PAGE=0;
+    private static final String DEFAULT_PAGE_PREFIX="Page ";
+    private static final String DEFAULT_PAGE_LABEL=DEFAULT_PAGE_PREFIX + DEFAULT_PAGE;
+    private final JLabel pageNumberLabel = label("Page 0");
+    private final JButton pageNumberButtonNext = new JButton("Next");
+    private final JButton pageNumberButtonPrevious = new JButton("Prev");
     private final JTextField patientName = textField();
+    private final JCheckBox fuzzyMatching = textBox("fuzzy match", false);
     private final JTextField patientId = textField();
     private final JDatePickerImpl startDate = createDatePicker();
     private final JDatePickerImpl endDate = createDatePicker();
@@ -55,7 +63,7 @@ public class SearchPanel extends JPanel {
     private final JTextField referringPhd = textField();
 
     private final DicomStoreSelector storeSelector;
-    private int pageNumber =0;
+    private int pageNumber;
 
     public SearchPanel(DicomStoreSelector storeSelector) {
         this.storeSelector = storeSelector;
@@ -92,6 +100,11 @@ public class SearchPanel extends JPanel {
         JLabel patientNameLabel = label("Patient Name");
         add(patientNameLabel);
         add(patientName);
+        JPanel fuzzyMatchingPanel = new JPanel();
+        BoxLayout fuzzyMatchingPanelLayout = new BoxLayout(fuzzyMatchingPanel, X_AXIS);
+        fuzzyMatchingPanel.setLayout(fuzzyMatchingPanelLayout);
+        fuzzyMatchingPanel.add(fuzzyMatching);
+        add(fuzzyMatchingPanel);
 
         add(Box.createVerticalStrut(20));
 
@@ -116,11 +129,22 @@ public class SearchPanel extends JPanel {
         JButton searchButton = new JButton("Search");
         searchButton.addActionListener((action) -> reloadTable());
         JButton reset = new JButton("Reset");
+        setPageNumber(DEFAULT_PAGE);
+
         reset.addActionListener((action) -> {
             clearSearchForm();
             reloadTable();
-            pageNumberLabel.setText("");
+            pageNumberLabel.setText(DEFAULT_PAGE_LABEL);
         });
+
+        pageNumberButtonPrevious.addActionListener((action) -> {
+            previousPage();
+        });
+
+        pageNumberButtonNext.addActionListener((action) -> {
+            nextPage();
+        });
+
         JPanel buttonPanel = new JPanel();
         BoxLayout buttonPanelLayout = new BoxLayout(buttonPanel, LINE_AXIS);
         buttonPanel.setLayout(buttonPanelLayout);
@@ -142,7 +166,7 @@ public class SearchPanel extends JPanel {
     }
 
 
-    public void prevPage() {
+    public void previousPage() {
         if(this.pageNumber >0){
             setPageNumber(pageNumber-1);
             loadTable(pageNumber);
@@ -165,6 +189,7 @@ public class SearchPanel extends JPanel {
     private StudyQuery buildQuery(int page) {
         StudyQuery query = new StudyQuery();
         query.setPatientName(patientName.getText());
+        query.setFuzzyMatching(fuzzyMatching.isSelected());
         query.setPatientId(patientId.getText());
         query.setAccessionNumber(accessionNumber.getText());
         query.setPhysicianName(referringPhd.getText());
@@ -201,6 +226,13 @@ public class SearchPanel extends JPanel {
         return result;
     }
 
+    private JCheckBox textBox(String text, boolean selected) {
+        JCheckBox checkBox = new JCheckBox(text, selected);
+        checkBox.setMaximumSize(
+                new Dimension(Integer.MAX_VALUE, checkBox.getPreferredSize().height));
+        return checkBox;
+    }
+
     private JLabel label(String text) {
         JLabel result = new JLabel(text);
 
@@ -212,11 +244,22 @@ public class SearchPanel extends JPanel {
 
     private void setPageNumber(int pageNumber) {
         this.pageNumber = pageNumber;
-        pageNumberLabel.setText(String.valueOf(pageNumber));
+        this.pageNumberLabel.setText(DEFAULT_PAGE_PREFIX+String.valueOf(pageNumber));
+        if(pageNumber==DEFAULT_PAGE){
+            pageNumberButtonPrevious.setVisible(false);
+        }else{
+            pageNumberButtonPrevious.setVisible(true);
+        }
     }
 
     public JLabel getPageNumberLabel() {
         return pageNumberLabel;
+    }
+    public JButton getPageNumberButtonNext() {
+        return pageNumberButtonNext;
+    }
+    public JButton getPageNumberButtonPrevious() {
+        return pageNumberButtonPrevious;
     }
 
 

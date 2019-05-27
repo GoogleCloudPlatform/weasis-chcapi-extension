@@ -13,34 +13,20 @@
 // limitations under the License.
 package org.weasis.dicom.google.api.ui;
 
-
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-
-import static javax.swing.BoxLayout.LINE_AXIS;
+import java.awt.FlowLayout;
 
 public class NavigationPanel extends JPanel {
     private SearchPanel searchPanel;
 
     public NavigationPanel(SearchPanel searchPanel) {
         this.searchPanel = searchPanel;
-        JButton previousButton = new JButton();
-        JButton nextButton = new JButton();
+        JButton previousButton = searchPanel.getPageNumberButtonPrevious();
+        JButton nextButton = searchPanel.getPageNumberButtonNext();
         JLabel pageNumberLabel = searchPanel.getPageNumberLabel();
-        previousButton.setText("previous");
-        nextButton.setText("next");
-        previousButton.addActionListener((action) -> {
-            this.searchPanel.prevPage();
-        });
-
-        nextButton.addActionListener((action) -> {
-            this.searchPanel.nextPage();
-        });
-        
-        BoxLayout navigationLayout = new BoxLayout(this, LINE_AXIS);
-        this.setLayout(navigationLayout);
+        this.setLayout(new FlowLayout(FlowLayout.LEFT));
         this.add(previousButton);
         this.add(pageNumberLabel);
         this.add(nextButton);
