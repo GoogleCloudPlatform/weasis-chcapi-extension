@@ -18,6 +18,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.weasis.core.api.service.BundleTools;
 import org.weasis.dicom.google.api.model.*;
+import org.weasis.dicom.google.api.ui.OAuth2Browser;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
@@ -113,7 +114,8 @@ public class GoogleAPIClient {
         GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(httpTransport, JSON_FACTORY,
                 clientSecrets, SCOPES).setDataStoreFactory(dataStoreFactory).build();
         // authorize
-        return new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("user");
+        return new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver(),
+            OAuth2Browser.INSTANCE).authorize("user");
     }
 
     private static InputStream getSecret() throws IOException {
