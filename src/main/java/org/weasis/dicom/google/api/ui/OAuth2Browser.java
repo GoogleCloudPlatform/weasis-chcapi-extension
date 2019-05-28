@@ -38,6 +38,7 @@ import com.google.api.client.util.Preconditions;
  * dialog if there is no default browser configured or an error occurred opening default browser.
  * 
  * @author Mikhail Ukhlin
+ * @see AuthorizationCodeInstalledApp
  */
 public class OAuth2Browser implements AuthorizationCodeInstalledApp.Browser {
   
