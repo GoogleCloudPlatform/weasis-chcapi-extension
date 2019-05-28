@@ -31,8 +31,8 @@ public class GoogleLoginTask extends SwingWorker<Void, Void> {
     private static final String ACTION_SIGN_OUT = Messages.getString("DicomStoreSelector.sign_out");
     private static final String ACTION_SIGN_IN = Messages.getString("DicomStoreSelector.sign_in");
 
-    public GoogleLoginTask(GoogleAPIClient api, JButton googleAuthButton, DicomStoreSelector view) {
-        this.googleAPIClient = api;
+    public GoogleLoginTask(GoogleAPIClient apiClient, JButton googleAuthButton, DicomStoreSelector view) {
+        this.googleAPIClient = apiClient;
         this.googleAuthButton = googleAuthButton;
         this.view = view;
     }
