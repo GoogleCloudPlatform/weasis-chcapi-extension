@@ -27,7 +27,7 @@ import java.awt.Desktop.Action;
 import java.awt.datatransfer.StringSelection;
 
 import javax.swing.JOptionPane;
-
+import javax.swing.SwingUtilities;
 import org.weasis.dicom.google.explorer.Messages;
 
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
@@ -107,7 +107,10 @@ public class OAuth2Browser implements AuthorizationCodeInstalledApp.Browser {
     final StringSelection selection = new StringSelection(url);
     Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, selection);
     // Show notification dialog
-    JOptionPane.showMessageDialog(null, Messages.getString("GoogleAPIClient.open_browser_message"));
+    SwingUtilities.invokeLater(() -> {
+      JOptionPane.showMessageDialog(null,
+          Messages.getString("GoogleAPIClient.open_browser_message"));
+    });
   }
   
 }
