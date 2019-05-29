@@ -31,12 +31,11 @@ import org.weasis.dicom.codec.TagD;
 import org.weasis.dicom.google.api.GoogleAPIClient;
 import com.google.api.client.http.HttpHeaders;
 import com.google.api.client.http.HttpResponse;
-
+import com.google.api.client.http.HttpStatusCodes;
 import javax.swing.SwingWorker;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
@@ -142,7 +141,7 @@ public class DownloadManager {
             	final HttpResponse response = client.executeGetRequest(dicomUrl, headers);
             	final int responseCode = response.getStatusCode();
             	
-                if (responseCode == HttpURLConnection.HTTP_OK) {
+                if (responseCode == HttpStatusCodes.STATUS_CODE_OK) {
                     String contentType = response.getContentType();
                     //find multipart boundary of multipart/related response
                     int indexStart = contentType.indexOf("boundary=") + 9;

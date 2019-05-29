@@ -238,10 +238,33 @@ public class GoogleAPIClient {
         return name.substring(name.lastIndexOf("/") + 1);
     }
 
+    /**
+     * Executes HTTP GET request using the specified URL.
+     * 
+     * @param url HTTP request URL.
+     * @return HTTP response.
+     * @throws IOException if an IO error occurred.
+     * @throws HttpResponseException if an error status code is detected in response.
+     * @see #executeGetRequest(String, HttpHeaders)
+     */
     public HttpResponse executeGetRequest(String url) throws IOException {
       return executeGetRequest(url, new HttpHeaders());
     }
     
+    /**
+     * Executes HTTP GET request using the specified URL and headers. This method will try to
+     * authorize first in GCP if authorization was not performed yet. If access token has been
+     * expired (HTTP 401 is returned) then attempt to get new access token will be performed and
+     * request will be executed again.
+     * 
+     * @param url HTTP request URL.
+     * @param headers HTTP request headers.
+     * @return HTTP response.
+     * @throws IOException if an IO error occurred.
+     * @throws HttpResponseException if an error status code is detected in response.
+     * @see #signIn()
+     * @see #refresh()
+     */
     public HttpResponse executeGetRequest(String url, HttpHeaders headers) throws IOException {
       signIn();
       try {
@@ -257,11 +280,23 @@ public class GoogleAPIClient {
       }
     }
     
+    /**
+     * Performs actual HTTP GET request using the specified URL and headers. This method also adds
+     * {@code Authorization} header initialized with OAuth access token. 
+     * 
+     * @param url HTTP request URL.
+     * @param headers HTTP request headers.
+     * @return HTTP response.
+     * @throws IOException if an IO error occurred.
+     * @throws HttpResponseException if an error status code is detected in response.
+     * @see #doExecuteGetRequest(String, HttpHeaders)
+     */
     private HttpResponse doExecuteGetRequest(String url, HttpHeaders headers) throws IOException {
-        final HttpRequest request = httpTransport.createRequestFactory().buildGetRequest(new GenericUrl(url));
-        headers.setAuthorization("Bearer " + accessToken);
-        request.setHeaders(headers);
-        return request.execute();
+      final HttpRequest request = httpTransport.createRequestFactory().buildGetRequest(
+          new GenericUrl(url));
+      headers.setAuthorization("Bearer " + accessToken);
+      request.setHeaders(headers);
+      return request.execute();
     }
 
     public List<org.weasis.dicom.google.api.model.Location> fetchLocations(ProjectDescriptor project) throws Exception {
