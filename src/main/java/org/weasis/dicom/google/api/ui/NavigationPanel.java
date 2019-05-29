@@ -18,6 +18,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import java.awt.FlowLayout;
 
+/** Panel to combine and align navigation buttons from  searchPanel
+ */
 public class NavigationPanel extends JPanel {
     private SearchPanel searchPanel;
 

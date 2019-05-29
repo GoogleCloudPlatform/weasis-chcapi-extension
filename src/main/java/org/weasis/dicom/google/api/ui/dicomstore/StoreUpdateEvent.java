@@ -15,8 +15,14 @@ package org.weasis.dicom.google.api.ui.dicomstore;
 
 import java.awt.AWTEvent;
 
+/** Store update event to notify listeners
+ */
 public class StoreUpdateEvent extends AWTEvent {
     static int id;
+
+    /** Store update event constructor calls AWTEvent constructor with source object and unique id
+     * @return Store update event.
+     */
     public StoreUpdateEvent(Object source) {
         super(source, id++);
     }
