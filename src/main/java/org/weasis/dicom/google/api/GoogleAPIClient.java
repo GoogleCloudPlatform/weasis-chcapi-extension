@@ -347,6 +347,10 @@ public class GoogleAPIClient {
                 + "/dicomWeb/studies/" + studyId;
     }
 
+    /** Generate String with GET variables for study request url
+     * @param query source of data for GET variables
+     * @return GET variables
+     */
     public static String formatQuery(StudyQuery query) {
         String allItems = "?includefield=all";
         if (Objects.isNull(query)) {

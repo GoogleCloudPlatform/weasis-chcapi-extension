@@ -32,7 +32,6 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JButton;
 import javax.swing.JPanel;
-import javax.swing.JOptionPane;
 import javax.swing.JComboBox;
 import javax.swing.JTextField;
 import javax.swing.JList;
@@ -344,7 +343,7 @@ public class DicomStoreSelector extends JPanel {
                 .flatMap(x -> (Optional<T>) x);
     }
 
-    /** Loads studies
+    /** Loads all DICOM studies that match the query
      * @param query parameters for study request
      */
     public void loadStudies(StudyQuery query) {
@@ -353,7 +352,7 @@ public class DicomStoreSelector extends JPanel {
         });
     }
 
-    /** Notifying all store update listeners with update event
+    /** Notify all store update listeners with update event
      * @param storeUpdateEvent event to pass
      */
     public void emitStoreUpdateUpdate(StoreUpdateEvent storeUpdateEvent) {
