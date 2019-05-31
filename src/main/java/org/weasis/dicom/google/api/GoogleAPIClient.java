@@ -350,6 +350,7 @@ public class GoogleAPIClient {
     /** Generate String with GET variables for study request url
      * @param query source of data for GET variables
      * @return GET variables
+     * @see StudyQuery
      */
     public static String formatQuery(StudyQuery query) {
         String allItems = "?includefield=all";

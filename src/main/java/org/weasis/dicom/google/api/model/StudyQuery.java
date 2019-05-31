@@ -89,6 +89,9 @@ public class StudyQuery {
         return this.pageSize;
     }
 
+    /** Set how many objects will be requested for each page
+     *  Please note it may be hard for UI to display too many objects
+     */
     public void setPageSize(int pageSize) {
         this.pageSize = pageSize;
     }
