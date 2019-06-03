@@ -47,10 +47,10 @@ import static javax.swing.BoxLayout.PAGE_AXIS;
 import static javax.swing.BoxLayout.X_AXIS;
 
 public class SearchPanel extends JPanel {
-    private static final int PAGE_SIZE=100;
-    private static final int DEFAULT_PAGE=0;
-    private static final String DEFAULT_PAGE_PREFIX="Page ";
-    private static final String DEFAULT_PAGE_LABEL=DEFAULT_PAGE_PREFIX + DEFAULT_PAGE;
+    private static final int PAGE_SIZE = 100;
+    private static final int DEFAULT_PAGE = 0;
+    private static final String DEFAULT_PAGE_PREFIX = "Page ";
+    private static final String DEFAULT_PAGE_LABEL = DEFAULT_PAGE_PREFIX + DEFAULT_PAGE;
     private final JLabel pageNumberLabel = label("Page 0");
     private final JButton pageNumberButtonNext = new JButton("Next");
     private final JButton pageNumberButtonPrevious = new JButton("Prev");
@@ -71,7 +71,6 @@ public class SearchPanel extends JPanel {
     }
 
     private void initSearchPanel() {
-        this.storeSelector.addStoreListener((event) -> reloadTable());
         BoxLayout layout = new BoxLayout(this, PAGE_AXIS);
         setLayout(layout);
         Border border = BorderFactory.createCompoundBorder(
@@ -137,6 +136,10 @@ public class SearchPanel extends JPanel {
             pageNumberLabel.setText(DEFAULT_PAGE_LABEL);
         });
 
+        storeSelector.addStoreListener((event) -> {
+            reloadTable();
+        });
+
         pageNumberButtonPrevious.addActionListener((action) -> {
             previousPage();
         });
@@ -144,6 +147,9 @@ public class SearchPanel extends JPanel {
         pageNumberButtonNext.addActionListener((action) -> {
             nextPage();
         });
+        pageNumberLabel.setVisible(false);
+        pageNumberButtonNext.setVisible(false);
+        pageNumberButtonPrevious.setVisible(false);
 
         JPanel buttonPanel = new JPanel();
         BoxLayout buttonPanelLayout = new BoxLayout(buttonPanel, LINE_AXIS);
@@ -163,17 +169,20 @@ public class SearchPanel extends JPanel {
     public void reloadTable() {
         setPageNumber(0);
         loadTable(pageNumber);
+        pageNumberLabel.setVisible(true);
+        pageNumberButtonNext.setVisible(true);
     }
 
 
     public void previousPage() {
-        if(this.pageNumber >0){
-            setPageNumber(pageNumber-1);
+        if (this.pageNumber > 0) {
+            setPageNumber(pageNumber - 1);
             loadTable(pageNumber);
         }
     }
+
     public void nextPage() {
-        setPageNumber(pageNumber+1);
+        setPageNumber(pageNumber + 1);
         loadTable(pageNumber);
     }
 
@@ -244,10 +253,10 @@ public class SearchPanel extends JPanel {
 
     private void setPageNumber(int pageNumber) {
         this.pageNumber = pageNumber;
-        this.pageNumberLabel.setText(DEFAULT_PAGE_PREFIX+String.valueOf(pageNumber));
-        if(pageNumber==DEFAULT_PAGE){
+        this.pageNumberLabel.setText(DEFAULT_PAGE_PREFIX + String.valueOf(pageNumber));
+        if (pageNumber == DEFAULT_PAGE) {
             pageNumberButtonPrevious.setVisible(false);
-        }else{
+        } else {
             pageNumberButtonPrevious.setVisible(true);
         }
     }
@@ -255,9 +264,11 @@ public class SearchPanel extends JPanel {
     public JLabel getPageNumberLabel() {
         return pageNumberLabel;
     }
+
     public JButton getPageNumberButtonNext() {
         return pageNumberButtonNext;
     }
+
     public JButton getPageNumberButtonPrevious() {
         return pageNumberButtonPrevious;
     }
