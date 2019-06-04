@@ -48,4 +48,24 @@ public class GoogleAPIClientTest {
         assertEquals("?PatientName=name&fuzzymatching=false",GoogleAPIClient.formatQuery(query));
 
     }
+
+
+    @Test
+    public void testPagination() throws Exception {
+        StudyQuery query = new StudyQuery();
+
+        query.setPage(0);
+        assertEquals("?includefield=all",GoogleAPIClient.formatQuery(query));
+
+        query.setPage(5);
+        assertEquals("?includefield=all",GoogleAPIClient.formatQuery(query));
+
+        query.setPage(0);
+        query.setPageSize(100);
+        assertEquals("?limit=100&offset=0",GoogleAPIClient.formatQuery(query));
+
+        query.setPage(2);
+        query.setPageSize(50);
+        assertEquals("?limit=50&offset=100",GoogleAPIClient.formatQuery(query));
+    }
 }

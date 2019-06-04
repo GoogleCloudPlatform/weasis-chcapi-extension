@@ -21,18 +21,20 @@ import org.weasis.dicom.google.explorer.DownloadManager;
 import javax.swing.JPanel;
 import javax.swing.BoxLayout;
 import javax.swing.Box;
-import java.awt.*;
+
+import java.awt.BorderLayout;
+import java.awt.Component;
 
 import static javax.swing.BoxLayout.PAGE_AXIS;
 
 public class GoogleExplorer extends JPanel {
 
     private final StudiesTable table;
-
     private final GoogleAPIClient googleAPIClient;
     private final DicomStoreSelector storeSelector;
 
     private final SearchPanel searchPanel;
+    private final NavigationPanel navigationPanel;
 
     public GoogleExplorer(GoogleAPIClient googleAPIClient) {
         this.googleAPIClient = googleAPIClient;
@@ -44,8 +46,8 @@ public class GoogleExplorer extends JPanel {
 
         table = new StudiesTable(this);
         storeSelector = new DicomStoreSelector(googleAPIClient, table);
-        searchPanel = new SearchPanel(googleAPIClient, storeSelector);
-
+        searchPanel = new SearchPanel(storeSelector);
+        navigationPanel = new NavigationPanel(searchPanel);
         add(centralComponent(), BorderLayout.CENTER);
         add(searchPanel, BorderLayout.WEST);
     }
@@ -58,7 +60,7 @@ public class GoogleExplorer extends JPanel {
         panel.add(storeSelector);
         panel.add(Box.createVerticalStrut(10));
         panel.add(table);
-
+        panel.add(navigationPanel);
         return panel;
     }
     

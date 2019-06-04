@@ -25,6 +25,8 @@ public class StudyQuery {
 
     private String accessionNumber;
     private String physicianName;
+    private int page;
+    private int pageSize;
     private boolean fuzzyMatching;
 
     public String getPatientName() {
@@ -73,6 +75,25 @@ public class StudyQuery {
 
     public void setPhysicianName(String physicianName) {
         this.physicianName = physicianName;
+    }
+
+    public void setPage(int offset) {
+        this.page = offset;
+    }
+
+    public int getPage() {
+        return this.page;
+    }
+
+    public int getPageSize() {
+        return this.pageSize;
+    }
+
+    /** Set how many objects will be requested for each page
+     *  Please note it may be hard for UI to display too many objects
+     */
+    public void setPageSize(int pageSize) {
+        this.pageSize = pageSize;
     }
 
     public void setFuzzyMatching(boolean fuzzyMatching) {
