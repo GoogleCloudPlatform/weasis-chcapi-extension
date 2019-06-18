@@ -16,18 +16,27 @@ package org.weasis.dicom.google.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.http.GenericUrl;
-import com.google.api.client.http.HttpHeaders;
-import com.google.api.client.http.HttpRequest;
-import com.google.api.client.http.HttpResponse;
-import com.google.api.client.http.HttpTransport;
 import org.weasis.core.api.service.BundleTools;
+import org.weasis.dicom.google.api.model.Dataset;
+import org.weasis.dicom.google.api.model.DicomStore;
+import org.weasis.dicom.google.api.model.Location;
+import org.weasis.dicom.google.api.model.ProjectDescriptor;
+import org.weasis.dicom.google.api.model.StudyModel;
+import org.weasis.dicom.google.api.model.StudyQuery;
+import org.weasis.dicom.google.api.ui.OAuth2Browser;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.http.GenericUrl;
+import com.google.api.client.http.HttpHeaders;
+import com.google.api.client.http.HttpRequest;
+import com.google.api.client.http.HttpResponse;
+import com.google.api.client.http.HttpResponseException;
+import com.google.api.client.http.HttpStatusCodes;
+import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.DataStoreFactory;
@@ -40,32 +49,18 @@ import com.google.api.services.oauth2.model.Tokeninfo;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import org.weasis.dicom.google.api.model.Dataset;
-import org.weasis.dicom.google.api.model.DicomStore;
-import org.weasis.dicom.google.api.model.Location;
-import org.weasis.dicom.google.api.model.ProjectDescriptor;
-import org.weasis.dicom.google.api.model.StudyModel;
-import org.weasis.dicom.google.api.model.StudyQuery;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.time.format.DateTimeFormatter;
+import java.io.*;
 import java.security.GeneralSecurityException;
-import java.util.Objects;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static org.weasis.dicom.google.api.util.StringUtils.isNotBlank;
-import static org.weasis.dicom.google.api.util.StringUtils.join;
-import static org.weasis.dicom.google.api.util.StringUtils.urlEncode;
-
+import static org.weasis.dicom.google.api.util.StringUtils.*;
 
 public class GoogleAPIClient {
 
@@ -138,7 +133,8 @@ public class GoogleAPIClient {
         // set up authorization code flow
         GoogleAuthorizationCodeFlow flow = authorizationCodeFlow();
         // authorize
-        return new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("user");
+        return new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver(),
+            OAuth2Browser.INSTANCE).authorize("user");
     }
 
     private static InputStream getSecret() throws IOException {
@@ -149,7 +145,7 @@ public class GoogleAPIClient {
 
         String portableDir = System.getProperty("weasis.portable.dir");
         if (portableDir != null) {
-            File portableSecrets = new File(portableDir + File.separator + SECRETS_FILE_NAME);
+            File portableSecrets = new File(portableDir, SECRETS_FILE_NAME);
             if (portableSecrets.exists() && !portableSecrets.isDirectory()) {
                 return new FileInputStream(portableSecrets);
             }
@@ -267,19 +263,69 @@ public class GoogleAPIClient {
         return name.substring(name.lastIndexOf("/") + 1);
     }
 
-    private HttpResponse googleRequest(String url) throws Exception {
-        refresh();
-        HttpRequest request = httpTransport.createRequestFactory().buildGetRequest(new GenericUrl(url));
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", Collections.singletonList("Bearer " + accessToken));
-        request.setHeaders(headers);
-        return request.execute();
+    /**
+     * Executes HTTP GET request using the specified URL.
+     * 
+     * @param url HTTP request URL.
+     * @return HTTP response.
+     * @throws IOException if an IO error occurred.
+     * @throws HttpResponseException if an error status code is detected in response.
+     * @see #executeGetRequest(String, HttpHeaders)
+     */
+    public HttpResponse executeGetRequest(String url) throws IOException {
+      return executeGetRequest(url, new HttpHeaders());
+    }
+    
+    /**
+     * Executes a HTTP GET request with the specified URL and headers. GCP authorization is done
+     * if the user is not already signed in. The access token is refreshed if it has expired
+     * (HTTP 401 is returned from the server) and the request is retried with the new access token.
+     * 
+     * @param url HTTP request URL.
+     * @param headers HTTP request headers.
+     * @return HTTP response.
+     * @throws IOException if an IO error occurred.
+     * @throws HttpResponseException if an error status code is detected in response.
+     * @see #signIn()
+     * @see #refresh()
+     */
+    public HttpResponse executeGetRequest(String url, HttpHeaders headers) throws IOException {
+      signIn();
+      try {
+        return doExecuteGetRequest(url, headers);
+      } catch (HttpResponseException e) {
+        // Token expired?
+        if (e.getStatusCode() == HttpStatusCodes.STATUS_CODE_UNAUTHORIZED) {
+          // Refresh token and try again
+          refresh();
+          return doExecuteGetRequest(url, headers);
+        }
+        throw e;
+      }
+    }
+    
+    /**
+     * Performs actual HTTP GET request using the specified URL and headers. This method also adds
+     * {@code Authorization} header initialized with OAuth access token. 
+     * 
+     * @param url HTTP request URL.
+     * @param headers HTTP request headers.
+     * @return HTTP response.
+     * @throws IOException if an IO error occurred.
+     * @throws HttpResponseException if an error status code is detected in response.
+     * @see #doExecuteGetRequest(String, HttpHeaders)
+     */
+    private HttpResponse doExecuteGetRequest(String url, HttpHeaders headers) throws IOException {
+      final HttpRequest request = httpTransport.createRequestFactory().buildGetRequest(
+          new GenericUrl(url));
+      headers.setAuthorization("Bearer " + accessToken);
+      request.setHeaders(headers);
+      return request.execute();
     }
 
     public List<org.weasis.dicom.google.api.model.Location> fetchLocations(ProjectDescriptor project) throws Exception {
-        refresh();
         String url = GOOGLE_API_BASE_PATH + "/projects/" + project.getId() + "/locations";
-        String data = googleRequest(url).parseAsString();
+        String data = executeGetRequest(url).parseAsString();
         JsonParser parser = new JsonParser();
         JsonElement jsonTree = parser.parse(data);
         JsonArray jsonObject = jsonTree.getAsJsonObject().get("locations").getAsJsonArray();
@@ -292,9 +338,8 @@ public class GoogleAPIClient {
     }
 
     public List<Dataset> fetchDatasets(Location location) throws Exception {
-        refresh();
         String url = GOOGLE_API_BASE_PATH + "/projects/" + location.getParent().getId() + "/locations/" + location.getId() + "/datasets";
-        String data = googleRequest(url).parseAsString();
+        String data = executeGetRequest(url).parseAsString();
         JsonParser parser = new JsonParser();
         JsonElement jsonTree = parser.parse(data);
         JsonArray jsonObject = jsonTree.getAsJsonObject().get("datasets").getAsJsonArray();
@@ -306,12 +351,11 @@ public class GoogleAPIClient {
     }
 
     public List<DicomStore> fetchDicomstores(Dataset dataset) throws Exception {
-        refresh();
         String url = GOOGLE_API_BASE_PATH
                 + "/projects/" + dataset.getProject().getId()
                 + "/locations/" + dataset.getParent().getId()
                 + "/datasets/" + dataset.getName() + "/dicomStores";
-        String data = googleRequest(url).parseAsString();
+        String data = executeGetRequest(url).parseAsString();
         JsonParser parser = new JsonParser();
         JsonElement jsonTree = parser.parse(data);
         JsonArray jsonObject = jsonTree.getAsJsonObject().get("dicomStores").getAsJsonArray();
@@ -324,14 +368,13 @@ public class GoogleAPIClient {
     }
 
     public List<StudyModel> fetchStudies(DicomStore store, StudyQuery query) throws Exception {
-        refresh();
         String url = GOOGLE_API_BASE_PATH
                 + "/projects/" + store.getProject().getId()
                 + "/locations/" + store.getLocation().getId()
                 + "/datasets/" + store.getParent().getName()
                 + "/dicomStores/" + store.getName()
                 + "/dicomWeb/studies" + formatQuery(query);
-        String data = googleRequest(url).parseAsString();
+        String data = executeGetRequest(url).parseAsString();
         List<StudyModel> studies = objectMapper.readValue(data, new TypeReference<List<StudyModel>>() {
         });
 
@@ -347,58 +390,59 @@ public class GoogleAPIClient {
                 + "/dicomWeb/studies/" + studyId;
     }
 
-    /** Generate String with GET variables for study request url
-     * @param query source of data for GET variables
-     * @return GET variables
-     * @see StudyQuery
-     */
-    public static String formatQuery(StudyQuery query) {
-        String allItems = "?includefield=all";
-        if (Objects.isNull(query)) {
-            return allItems;
-        }
-
-        List<String> parameters = new ArrayList<>();
-        if (isNotBlank(query.getPatientName())) {
-            parameters.add("PatientName=" + urlEncode(query.getPatientName()));
-            parameters.add("fuzzymatching=" + (query.getFuzzyMatching() ? "true" : "false"));
-        }
-
-        if (isNotBlank(query.getPatientId())) {
-            parameters.add("PatientID=" + urlEncode(query.getPatientId()));
-        }
-
-        if (isNotBlank(query.getAccessionNumber())) {
-            parameters.add("AccessionNumber=" + urlEncode(query.getAccessionNumber()));
-        }
-
-        if (query.getStartDate() != null && query.getEndDate() != null) {
-            parameters.add("StudyDate="
-                    + urlEncode(DATE_FORMAT.format(query.getStartDate()))
-                    + "-" + urlEncode(DATE_FORMAT.format(query.getEndDate()))
-            );
-        }
-
-        int pageNumber = query.getPage();
-        int pageSize = query.getPageSize();
-
-        if (pageSize > 0) {
-            parameters.add("limit=" + String.valueOf(pageSize));
-
-            if (pageNumber >= 0) {
-                parameters.add("offset=" + String.valueOf(pageNumber * pageSize));
-            }
-        }
-
-        if (isNotBlank(query.getPhysicianName())) {
-            parameters.add("ReferringPhysicianName=" + urlEncode(query.getPhysicianName()));
-        }
-
-        if (parameters.isEmpty()) {
-            return allItems;
-        } else {
-            return "?" + join(parameters, "&");
-        }
+  /**
+   * Generate String with GET variables for study request url
+   * 
+   * @param query source of data for GET variables
+   * @return GET variables
+   * @see StudyQuery
+   */
+  public static String formatQuery(StudyQuery query) {
+    String allItems = "?includefield=all";
+    if (Objects.isNull(query)) {
+      return allItems;
     }
+
+    List<String> parameters = new ArrayList<>();
+    if (isNotBlank(query.getPatientName())) {
+      parameters.add("PatientName=" + urlEncode(query.getPatientName()));
+      parameters.add("fuzzymatching=" + (query.getFuzzyMatching() ? "true" : "false"));
+    }
+
+    if (isNotBlank(query.getPatientId())) {
+      parameters.add("PatientID=" + urlEncode(query.getPatientId()));
+    }
+
+    if (isNotBlank(query.getAccessionNumber())) {
+      parameters.add("AccessionNumber=" + urlEncode(query.getAccessionNumber()));
+    }
+
+    if (query.getStartDate() != null && query.getEndDate() != null) {
+      parameters.add("StudyDate=" + urlEncode(DATE_FORMAT.format(query.getStartDate())) + "-"
+          + urlEncode(DATE_FORMAT.format(query.getEndDate())));
+    }
+
+    int pageNumber = query.getPage();
+    int pageSize = query.getPageSize();
+
+    if (pageSize > 0) {
+      parameters.add("limit=" + String.valueOf(pageSize));
+
+      if (pageNumber >= 0) {
+        parameters.add("offset=" + String.valueOf(pageNumber * pageSize));
+      }
+    }
+
+    if (isNotBlank(query.getPhysicianName())) {
+      parameters.add("ReferringPhysicianName=" + urlEncode(query.getPhysicianName()));
+    }
+
+    if (parameters.isEmpty()) {
+      return allItems;
+    } else {
+      return "?" + join(parameters, "&");
+    }
+  }
+  
 }
 
