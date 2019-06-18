@@ -24,6 +24,7 @@ import org.mockito.invocation.InvocationOnMock;
 
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.weasis.dicom.google.api.model.StudyQuery;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import com.google.api.client.http.HttpHeaders;
@@ -31,6 +32,8 @@ import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpStatusCodes;
 import com.google.api.client.http.HttpResponseException;
 import com.google.api.client.http.HttpResponseException.Builder;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests for {@link GoogleAPIClient} class.
@@ -89,6 +92,47 @@ public class GoogleAPIClientTest {
     Mockito.verify(client, Mockito.times(1)).executeGetRequest(Mockito.eq(url), Mockito.any());
     PowerMockito.verifyPrivate(client, Mockito.times(2)).invoke("doExecuteGetRequest",
         Mockito.eq(url), Mockito.any());
+  }
+  
+  @Test
+  public void testNullQuery() throws Exception {
+      assertEquals("?includefield=all",GoogleAPIClient.formatQuery(null));
+  }
+  @Test
+  public void testfuzzyMatching() throws Exception {
+      StudyQuery query = new StudyQuery();
+
+      query.setFuzzyMatching(true);
+      assertEquals("?includefield=all",GoogleAPIClient.formatQuery(query));
+
+      query.setPatientName("name");
+      query.setFuzzyMatching(true);
+      assertEquals("?PatientName=name&fuzzymatching=true",GoogleAPIClient.formatQuery(query));
+
+      query.setPatientName("name");
+      query.setFuzzyMatching(false);
+      assertEquals("?PatientName=name&fuzzymatching=false",GoogleAPIClient.formatQuery(query));
+
+  }
+
+
+  @Test
+  public void testPagination() throws Exception {
+      StudyQuery query = new StudyQuery();
+
+      query.setPage(0);
+      assertEquals("?includefield=all",GoogleAPIClient.formatQuery(query));
+
+      query.setPage(5);
+      assertEquals("?includefield=all",GoogleAPIClient.formatQuery(query));
+
+      query.setPage(0);
+      query.setPageSize(100);
+      assertEquals("?limit=100&offset=0",GoogleAPIClient.formatQuery(query));
+
+      query.setPage(2);
+      query.setPageSize(50);
+      assertEquals("?limit=50&offset=100",GoogleAPIClient.formatQuery(query));
   }
   
 }

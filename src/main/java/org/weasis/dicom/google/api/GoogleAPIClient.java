@@ -17,7 +17,12 @@ package org.weasis.dicom.google.api;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.weasis.core.api.service.BundleTools;
-import org.weasis.dicom.google.api.model.*;
+import org.weasis.dicom.google.api.model.Dataset;
+import org.weasis.dicom.google.api.model.DicomStore;
+import org.weasis.dicom.google.api.model.Location;
+import org.weasis.dicom.google.api.model.ProjectDescriptor;
+import org.weasis.dicom.google.api.model.StudyModel;
+import org.weasis.dicom.google.api.model.StudyQuery;
 import org.weasis.dicom.google.api.ui.OAuth2Browser;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
@@ -25,7 +30,13 @@ import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
-import com.google.api.client.http.*;
+import com.google.api.client.http.GenericUrl;
+import com.google.api.client.http.HttpHeaders;
+import com.google.api.client.http.HttpRequest;
+import com.google.api.client.http.HttpResponse;
+import com.google.api.client.http.HttpResponseException;
+import com.google.api.client.http.HttpStatusCodes;
+import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.DataStoreFactory;
@@ -380,42 +391,59 @@ public class GoogleAPIClient {
                 + "/dicomWeb/studies/" + studyId;
     }
 
-    public static String formatQuery(StudyQuery query) {
-        String allItems = "?includefield=all";
-        if (query == null) {
-            return allItems;
-        }
-
-        List<String> parameters = new ArrayList<>();
-        if (isNotBlank(query.getPatientName())) {
-            parameters.add("PatientName=" + urlEncode(query.getPatientName()));
-            parameters.add("fuzzymatching=" + (query.getFuzzyMatching() ? "true" : "false"));
-        }
-
-        if (isNotBlank(query.getPatientId())) {
-            parameters.add("PatientID=" + urlEncode(query.getPatientId()));
-        }
-
-        if (isNotBlank(query.getAccessionNumber())) {
-            parameters.add("AccessionNumber=" + urlEncode(query.getAccessionNumber()));
-        }
-
-        if (query.getStartDate() != null && query.getEndDate() != null) {
-            parameters.add("StudyDate="
-                    + urlEncode(DATE_FORMAT.format(query.getStartDate()))
-                    + "-" + urlEncode(DATE_FORMAT.format(query.getEndDate()))
-            );
-        }
-
-        if (isNotBlank(query.getPhysicianName())) {
-            parameters.add("ReferringPhysicianName=" + urlEncode(query.getPhysicianName()));
-        }
-
-        if (parameters.isEmpty()) {
-            return allItems;
-        } else {
-            return "?" + join(parameters, "&");
-        }
+  /**
+   * Generate String with GET variables for study request url
+   * 
+   * @param query source of data for GET variables
+   * @return GET variables
+   * @see StudyQuery
+   */
+  public static String formatQuery(StudyQuery query) {
+    String allItems = "?includefield=all";
+    if (Objects.isNull(query)) {
+      return allItems;
     }
+
+    List<String> parameters = new ArrayList<>();
+    if (isNotBlank(query.getPatientName())) {
+      parameters.add("PatientName=" + urlEncode(query.getPatientName()));
+      parameters.add("fuzzymatching=" + (query.getFuzzyMatching() ? "true" : "false"));
+    }
+
+    if (isNotBlank(query.getPatientId())) {
+      parameters.add("PatientID=" + urlEncode(query.getPatientId()));
+    }
+
+    if (isNotBlank(query.getAccessionNumber())) {
+      parameters.add("AccessionNumber=" + urlEncode(query.getAccessionNumber()));
+    }
+
+    if (query.getStartDate() != null && query.getEndDate() != null) {
+      parameters.add("StudyDate=" + urlEncode(DATE_FORMAT.format(query.getStartDate())) + "-"
+          + urlEncode(DATE_FORMAT.format(query.getEndDate())));
+    }
+
+    int pageNumber = query.getPage();
+    int pageSize = query.getPageSize();
+
+    if (pageSize > 0) {
+      parameters.add("limit=" + String.valueOf(pageSize));
+
+      if (pageNumber >= 0) {
+        parameters.add("offset=" + String.valueOf(pageNumber * pageSize));
+      }
+    }
+
+    if (isNotBlank(query.getPhysicianName())) {
+      parameters.add("ReferringPhysicianName=" + urlEncode(query.getPhysicianName()));
+    }
+
+    if (parameters.isEmpty()) {
+      return allItems;
+    } else {
+      return "?" + join(parameters, "&");
+    }
+  }
+  
 }
 

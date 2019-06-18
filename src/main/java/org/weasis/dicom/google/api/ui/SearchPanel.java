@@ -14,10 +14,8 @@
 
 package org.weasis.dicom.google.api.ui;
 
-import org.weasis.dicom.google.api.GoogleAPIClient;
 import org.weasis.dicom.google.api.model.StudyQuery;
 import org.weasis.dicom.google.api.ui.dicomstore.DicomStoreSelector;
-import org.weasis.dicom.google.api.ui.dicomstore.LoadStudiesTask;
 import org.jdatepicker.DateModel;
 import org.jdatepicker.impl.JDatePanelImpl;
 import org.jdatepicker.impl.JDatePickerImpl;
@@ -35,7 +33,9 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -47,7 +47,13 @@ import static javax.swing.BoxLayout.PAGE_AXIS;
 import static javax.swing.BoxLayout.X_AXIS;
 
 public class SearchPanel extends JPanel {
-
+    private static final int PAGE_SIZE = 100;
+    private static final int DEFAULT_PAGE = 0;
+    private static final String DEFAULT_PAGE_PREFIX = "Page ";
+    private static final String DEFAULT_PAGE_LABEL = DEFAULT_PAGE_PREFIX + DEFAULT_PAGE;
+    private final JLabel pageNumberLabel = label("Page 0");
+    private final JButton pageNumberButtonNext = new JButton("Next");
+    private final JButton pageNumberButtonPrevious = new JButton("Prev");
     private final JTextField patientName = textField();
     private final JCheckBox fuzzyMatching = textBox("fuzzy match", false);
     private final JTextField patientId = textField();
@@ -56,11 +62,10 @@ public class SearchPanel extends JPanel {
     private final JTextField accessionNumber = textField();
     private final JTextField referringPhd = textField();
 
-    private final GoogleAPIClient googleAPIClient;
     private final DicomStoreSelector storeSelector;
+    private int pageNumber;
 
-    public SearchPanel(GoogleAPIClient googleAPIClient, DicomStoreSelector storeSelector) {
-        this.googleAPIClient = googleAPIClient;
+    public SearchPanel(DicomStoreSelector storeSelector) {
         this.storeSelector = storeSelector;
         initSearchPanel();
     }
@@ -123,10 +128,29 @@ public class SearchPanel extends JPanel {
         JButton searchButton = new JButton("Search");
         searchButton.addActionListener((action) -> reloadTable());
         JButton reset = new JButton("Reset");
+        setPageNumber(DEFAULT_PAGE);
+
         reset.addActionListener((action) -> {
             clearSearchForm();
             reloadTable();
+            pageNumberLabel.setText(DEFAULT_PAGE_LABEL);
         });
+
+        storeSelector.addStoreListener((event) -> {
+            reloadTable();
+        });
+
+        pageNumberButtonPrevious.addActionListener((action) -> {
+            previousPage();
+        });
+
+        pageNumberButtonNext.addActionListener((action) -> {
+            nextPage();
+        });
+        pageNumberLabel.setVisible(false);
+        pageNumberButtonNext.setVisible(false);
+        pageNumberButtonPrevious.setVisible(false);
+
         JPanel buttonPanel = new JPanel();
         BoxLayout buttonPanelLayout = new BoxLayout(buttonPanel, LINE_AXIS);
         buttonPanel.setLayout(buttonPanelLayout);
@@ -138,10 +162,28 @@ public class SearchPanel extends JPanel {
         add(Box.createVerticalGlue());
     }
 
-    private void reloadTable() {
-        storeSelector.getCurrentStore().ifPresent((store) -> {
-            new LoadStudiesTask(store, googleAPIClient, storeSelector, buildQuery()).execute();
-        });
+    public void loadTable(int page) {
+        storeSelector.loadStudies(buildQuery(page));
+    }
+
+    public void reloadTable() {
+        setPageNumber(0);
+        loadTable(pageNumber);
+        pageNumberLabel.setVisible(true);
+        pageNumberButtonNext.setVisible(true);
+    }
+
+
+    public void previousPage() {
+        if (this.pageNumber > 0) {
+            setPageNumber(pageNumber - 1);
+            loadTable(pageNumber);
+        }
+    }
+
+    public void nextPage() {
+        setPageNumber(pageNumber + 1);
+        loadTable(pageNumber);
     }
 
     private void clearSearchForm() {
@@ -153,13 +195,15 @@ public class SearchPanel extends JPanel {
         endDate.getModel().setSelected(false);
     }
 
-    private StudyQuery buildQuery() {
+    private StudyQuery buildQuery(int page) {
         StudyQuery query = new StudyQuery();
         query.setPatientName(patientName.getText());
         query.setFuzzyMatching(fuzzyMatching.isSelected());
         query.setPatientId(patientId.getText());
         query.setAccessionNumber(accessionNumber.getText());
         query.setPhysicianName(referringPhd.getText());
+        query.setPage(page);
+        query.setPageSize(PAGE_SIZE);
         DateModel<?> startDateModel = startDate.getModel();
         if (startDateModel.isSelected()) {
             query.setStartDate(LocalDate.of(startDateModel.getYear(), startDateModel.getMonth() + 1, startDateModel.getDay()));
@@ -206,6 +250,29 @@ public class SearchPanel extends JPanel {
 
         return result;
     }
+
+    private void setPageNumber(int pageNumber) {
+        this.pageNumber = pageNumber;
+        this.pageNumberLabel.setText(DEFAULT_PAGE_PREFIX + String.valueOf(pageNumber));
+        if (pageNumber == DEFAULT_PAGE) {
+            pageNumberButtonPrevious.setVisible(false);
+        } else {
+            pageNumberButtonPrevious.setVisible(true);
+        }
+    }
+
+    public JLabel getPageNumberLabel() {
+        return pageNumberLabel;
+    }
+
+    public JButton getPageNumberButtonNext() {
+        return pageNumberButtonNext;
+    }
+
+    public JButton getPageNumberButtonPrevious() {
+        return pageNumberButtonPrevious;
+    }
+
 
     public class DateLabelFormatter extends JFormattedTextField.AbstractFormatter {
 

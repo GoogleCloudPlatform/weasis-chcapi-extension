@@ -19,6 +19,7 @@ import org.weasis.dicom.google.api.model.Dataset;
 import org.weasis.dicom.google.api.model.DicomStore;
 import org.weasis.dicom.google.api.model.Location;
 import org.weasis.dicom.google.api.model.ProjectDescriptor;
+import org.weasis.dicom.google.api.model.StudyQuery;
 import org.weasis.dicom.google.api.ui.StudiesTable;
 import org.weasis.dicom.google.api.ui.StudyView;
 import org.slf4j.Logger;
@@ -31,7 +32,6 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JButton;
 import javax.swing.JPanel;
-import javax.swing.JOptionPane;
 import javax.swing.JComboBox;
 import javax.swing.JTextField;
 import javax.swing.JList;
@@ -42,7 +42,9 @@ import javax.swing.UIManager;
 import javax.swing.plaf.basic.BasicComboBoxEditor;
 import javax.swing.plaf.basic.BasicComboPopup;
 
-import java.awt.*;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Window;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyAdapter;
@@ -211,11 +213,8 @@ public class DicomStoreSelector extends JPanel {
                         }
                 ).orElse(false)
         );
-
-        googleDicomstoreCombobox.addItemListener(this.<DicomStore>selectedListener(
-                store -> new LoadStudiesTask(store, googleAPIClient, this),
-                nothing -> updateTable(emptyList())
-        ));
+        googleDicomstoreCombobox.addItemListener(item ->
+                emitStoreUpdateUpdate(new StoreUpdateEvent(this)));
 
         AutoRefreshComboBoxExtension.wrap(googleDicomstoreCombobox, () ->
                 getSelectedItem(modelDataset).map(
@@ -226,6 +225,10 @@ public class DicomStoreSelector extends JPanel {
                         }
                 ).orElse(false)
         );
+    }
+
+    private LoadStudiesTask loadStudiesTask(DicomStore store, StudyQuery query) {
+        return new LoadStudiesTask(store, googleAPIClient, this, query);
     }
 
     public void updateProjects(List<ProjectDescriptor> result) {
@@ -266,7 +269,12 @@ public class DicomStoreSelector extends JPanel {
     }
 
     public Optional<DicomStore> getCurrentStore() {
-        return (Optional<DicomStore>) modelDicomstore.getSelectedItem();
+        Object store = modelDicomstore.getSelectedItem();
+        Optional<DicomStore> storeOptional = Optional.empty();
+        if (Objects.nonNull(store)) {
+            storeOptional = (Optional<DicomStore>) modelDicomstore.getSelectedItem();
+        }
+        return storeOptional;
     }
 
     /**
@@ -335,6 +343,34 @@ public class DicomStoreSelector extends JPanel {
                 .flatMap(x -> (Optional<T>) x);
     }
 
+    /** Loads all DICOM studies that match the query
+     * @param query parameters for study request
+     */
+    public void loadStudies(StudyQuery query) {
+        getCurrentStore().ifPresent((store) -> {
+            loadStudiesTask(store, query).execute();
+        });
+    }
+
+    /** Notify all store update listeners with update event
+     * @param storeUpdateEvent event to pass
+     */
+    public void emitStoreUpdateUpdate(StoreUpdateEvent storeUpdateEvent) {
+        Object[] listeners = listenerList.getListenerList();
+        for (int i = 0; i < listeners.length; i = i + 2) {
+            if (listeners[i] == StoreUpdateListener.class) {
+                ((StoreUpdateListener) listeners[i + 1]).actionPerformed(storeUpdateEvent);
+            }
+        }
+    }
+
+    /** Adds StoreUpdateListener listener to common listeners list
+     * @param listener listener to add
+     */
+    public void addStoreListener(StoreUpdateListener listener) {
+        this.listenerList.add(StoreUpdateListener.class, listener);
+    }
+
     private class ListRenderer<T> implements ListCellRenderer<Optional<T>> {
 
         private final DefaultListCellRenderer renderer = new DefaultListCellRenderer();
@@ -369,9 +405,9 @@ public class DicomStoreSelector extends JPanel {
         public void setItem(Object anObject) {
             if (anObject != null) {
                 Optional<ProjectDescriptor> item = anObject.getClass().equals(String.class) ? Optional.empty() : (Optional<ProjectDescriptor>) anObject;
-            	if (item.isPresent()) {
+                if (item.isPresent()) {
                     editor.setText(item.get().getName());
-            	}
+                }
             }
         }
     }
@@ -387,9 +423,9 @@ public class DicomStoreSelector extends JPanel {
         }
 
         public void search(String input) {
-        	if ((input == null && prevInput == null) || (input.toLowerCase().equals(prevInput.toLowerCase()))) {
-        		return;
-        	}
+            if ((input == null && prevInput == null) || (input.toLowerCase().equals(prevInput.toLowerCase()))) {
+                return;
+            }
             removeAllItems();
             List<ProjectDescriptor> updated = new ArrayList<>();
             for (int i = 0; i < projects.size(); i++) {
