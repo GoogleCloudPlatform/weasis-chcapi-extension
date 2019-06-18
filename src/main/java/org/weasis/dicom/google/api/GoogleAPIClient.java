@@ -277,10 +277,9 @@ public class GoogleAPIClient {
     }
     
     /**
-     * Executes HTTP GET request using the specified URL and headers. This method will try to
-     * authorize first in GCP if authorization was not performed yet. If access token has been
-     * expired (HTTP 401 is returned) then attempt to get new access token will be performed and
-     * request will be executed again.
+     * Executes a HTTP GET request with the specified URL and headers. GCP authorization is done
+     * if the user is not already signed in. The access token is refreshed if it has expired
+     * (HTTP 401 is returned from the server) and the request is retried with the new access token.
      * 
      * @param url HTTP request URL.
      * @param headers HTTP request headers.

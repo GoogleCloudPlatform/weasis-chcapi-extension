@@ -34,8 +34,9 @@ import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInsta
 import com.google.api.client.util.Preconditions;
 
 /**
- * OAuth2 authorization browser that copies authorization URL to clipboard and shows notification
- * dialog if there is no default browser configured or an error occurred opening default browser.
+ * OAuth2 authorization browser that copies the authorization URL to the clipboard and shows the
+ * notification dialog if there is no default browser configured or an error occurred while opening
+ * the default browser.
  * 
  * @author Mikhail Ukhlin
  * @see AuthorizationCodeInstalledApp
