@@ -1,0 +1,26 @@
+steps:
+- name: "gcr.io/cloud-builders/git"
+  args:
+  - "clone"
+  - "https://github.com/nroduit/Weasis.git"
+  - "weasis"
+- name: "gcr.io/cloud-builders/git"
+  args:
+  - "checkout"
+  - "tags/3.0.4"
+  dir: "weasis"
+- name: "maven:3.6.0-jdk-8"
+  volumes:
+  - name: "mavenLocal"
+    path: "/root/.m2"
+  args:
+  - "mvn"
+  - "install"
+  dir: "weasis"
+- name: "maven:3.6.0-jdk-8"
+  volumes:
+  - name: "mavenLocal"
+    path: "/root/.m2"
+  args:
+  - "mvn"
+  - "install"
