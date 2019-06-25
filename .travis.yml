@@ -1,9 +1,0 @@
-language: java
-install:
-    - git clone https://github.com/nroduit/Weasis.git
-    - cd Weasis 
-    - git checkout tags/3.0.4
-    - mvn install
-script:
-    - cd ..
-    - mvn install
