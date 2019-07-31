@@ -1,0 +1,39 @@
+steps:
+- name: "gcr.io/cloud-builders/git"
+  args:
+  - "clone"
+  - "https://github.com/nroduit/Weasis.git"
+  - "weasis"
+- name: "gcr.io/cloud-builders/git"
+  args:
+  - "checkout"
+  - "tags/3.0.4"
+  dir: "weasis"
+- name: "maven:3.6.0-jdk-8"
+  volumes:
+  - name: "mavenLocal"
+    path: "/root/.m2"
+  args:
+  - "mvn"
+  - "install"
+  dir: "weasis"
+- name: "maven:3.6.0-jdk-8"
+  volumes:
+  - name: "mavenLocal"
+    path: "/root/.m2"
+  args:
+  - "mvn"
+  - "install"
+- name: 'google/cloud-sdk:251.0.0'
+  args:
+  - 'bash'
+  - './release/githubRelease.sh'
+  - '$REPO_NAME'
+  - '$TAG_NAME'
+  secretEnv:
+  - 'ACCESS_TOKEN'
+timeout: 600s
+secrets:
+- kmsKeyName: projects/gcp-healthcare-oss-test/locations/global/keyRings/default/cryptoKeys/github-robot-access-token
+  secretEnv:
+    ACCESS_TOKEN: CiQAM/SK3FUc1t+CnHDdgRzbc556FIyHddxRpsnolmSKfpiZ66sSUQDrEGO9gz15JIulryNagWzUOGbBEAaC04y85J8fNRjJZ8T8ntzh6Kt0Sa+GCG+3n5xSQdDJdj6xOG0LfVzvU+/K3mZ1KJlIcd0jiCeBrjYLlw==
