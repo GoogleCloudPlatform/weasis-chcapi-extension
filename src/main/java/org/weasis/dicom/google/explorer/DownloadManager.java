@@ -51,7 +51,7 @@ public class DownloadManager {
     public interface DownloadListener {
     	public void downloadFinished();
     }
-    
+
     public static class LoadGoogleDicom extends SwingWorker<Boolean, Void> {
 
         private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(LoadGoogleDicom.class);
@@ -101,7 +101,6 @@ public class DownloadManager {
                 return;
             }
 
-            MediaSeries<MediaElement> dicomSeries = null;
             for (File file1 : file) {
                 if (isCancelled()) {
                     LOGGER.info("Download cancelled, returning");
@@ -118,20 +117,12 @@ public class DownloadManager {
                                 || MimeInspector.isMatchingMimeTypeFromMagicNumber(file1, DicomMediaIO.MIMETYPE)) {
                             DicomMediaIO loader = new DicomMediaIO(file1);
                             if (loader.isReadableDicom()) {
-                                if (dicomSeries == null) {
-                                    dicomSeries = loader.getMediaSeries();
-                                } else {
-                                    dicomSeries.addAll(Arrays.asList(loader.getMediaElement()));
-                                }
+                                ViewerPluginBuilder.openSequenceInDefaultPlugin(loader.getMediaSeries(), dicomModel, false, false);
                             }
                         }
                     }
                 }
             }
-            List<MediaElement> sortedSeries = dicomSeries.getSortedMedias(instanceNumberComparator);
-            dicomSeries.dispose();
-            dicomSeries.addAll(sortedSeries);
-            ViewerPluginBuilder.openSequenceInDefaultPlugin(dicomSeries, dicomModel, true, true);
         }
 
         private File[] downloadFiles(String dicomUrl) {
@@ -140,7 +131,7 @@ public class DownloadManager {
                 headers.setAccept("multipart/related; type=application/dicom; transfer-syntax=*");
             	final HttpResponse response = client.executeGetRequest(dicomUrl, headers);
             	final int responseCode = response.getStatusCode();
-            	
+
                 if (responseCode == HttpStatusCodes.STATUS_CODE_OK) {
                     String contentType = response.getContentType();
                     //find multipart boundary of multipart/related response
