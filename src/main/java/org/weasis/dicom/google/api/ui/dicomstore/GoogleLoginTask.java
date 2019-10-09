@@ -13,13 +13,13 @@
 // limitations under the License.
 package org.weasis.dicom.google.api.ui.dicomstore;
 
-import org.weasis.dicom.google.api.GoogleAPIClient;
-import org.weasis.dicom.google.explorer.Messages;
-
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
 
+import org.weasis.core.api.gui.util.GuiExecutor;
+import org.weasis.dicom.google.api.GoogleAPIClient;
+import org.weasis.dicom.google.explorer.Messages;
 
 public class GoogleLoginTask extends SwingWorker<Void, Void> {
     protected final GoogleAPIClient googleAPIClient;
@@ -46,12 +46,13 @@ public class GoogleLoginTask extends SwingWorker<Void, Void> {
             googleAuthButton.setActionCommand(ACTION_SIGN_OUT);
             new LoadProjectsTask(googleAPIClient, view).execute();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(null,
-                    "Error occured on fetching google API.\n" +
-                            "Make sure you created OAuth Client ID credential \n" +
-                            "in Google Cloud console at https://console.cloud.google.com/apis/credentials \n" +
-                            "and copied your client_secrets.json to Weasis root folder.\n" +
-                            "Error message:" + ex.getCause().getMessage());
+            GuiExecutor.instance().invokeAndWait(() -> JOptionPane.showMessageDialog(null,
+                "Error occured on fetching google API.\n" +
+                        "Make sure you created OAuth Client ID credential \n" +
+                        "in Google Cloud console at https://console.cloud.google.com/apis/credentials \n" +
+                        "and copied your client_secrets.json to Weasis root folder.\n" +
+                        "Error message:" + ex.getCause().getMessage()));
+
             googleAPIClient.signOut();
             googleAuthButton.setText(TEXT_GOOGLE_SIGN_IN);
             googleAuthButton.setActionCommand(ACTION_SIGN_IN);

@@ -32,6 +32,8 @@ See https://cloud.google.com/healthcare/docs/ to get started.
 * Follow instructions at [installing
   plug-ins](https://nroduit.github.io/en/basics/customize/build-plugins/#install-plug-ins)
   to add this plugin to Weasis.
+* Copy your client_secrets.json to weasis-portable root folder (or configure the path of the json file with the property "google.client.secret" in conf/ext-config.properties
+  Example for the web distribution: google.client.secret={felix.cache.rootdir}/.weasis/client_secrets.json
 * Run Weasis Viewer executable
 * Switch to **_Google Dicom Explorer_** tab and login using your Google Account
 
