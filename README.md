@@ -17,7 +17,7 @@ It utilizes [DICOMweb REST API](https://cloud.google.com/healthcare/docs/how-tos
 The plugin runs as an extension to the main Weasis application, so first you
 need to download the main Weasis application from https://nroduit.github.io/en/.
 
-***Please note, latest supported release of Weasis is 3.0.4***
+***Please note, latest supported release of Weasis is [3.0.4](https://github.com/nroduit/Weasis/releases/tag/3.0.4)***
 
 Then you need to have existing data in the Cloud Healthcare API and install the
 plugin to get up and running. Please see more detailed instructions below.
