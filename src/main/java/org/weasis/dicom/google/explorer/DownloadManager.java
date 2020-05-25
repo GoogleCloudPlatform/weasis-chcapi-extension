@@ -14,31 +14,38 @@
 
 package org.weasis.dicom.google.explorer;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
+
+import javax.swing.SwingWorker;
+
 import org.apache.commons.fileupload.MultipartStream;
 import org.dcm4che3.data.Tag;
 import org.slf4j.LoggerFactory;
 import org.weasis.core.api.explorer.model.DataExplorerModel;
 import org.weasis.core.api.gui.util.AppProperties;
 import org.weasis.core.api.media.MimeInspector;
-import org.weasis.core.api.media.data.*;
+import org.weasis.core.api.media.data.MediaElement;
 import org.weasis.core.api.util.FileUtil;
 import org.weasis.core.api.util.ThreadUtil;
 import org.weasis.core.ui.editor.FileModel;
 import org.weasis.core.ui.editor.ViewerPluginBuilder;
-import org.weasis.dicom.codec.DicomMediaIO;
 import org.weasis.dicom.codec.DicomCodec;
+import org.weasis.dicom.codec.DicomMediaIO;
 import org.weasis.dicom.codec.TagD;
 import org.weasis.dicom.google.api.GoogleAPIClient;
+
 import com.google.api.client.http.HttpHeaders;
 import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpStatusCodes;
-import javax.swing.SwingWorker;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.stream.Collectors;
 
 public class DownloadManager {
 
@@ -114,7 +121,7 @@ public class DownloadManager {
 
                     if (file1.canRead()) {
                         if (FileUtil.isFileExtensionMatching(file1, DicomCodec.FILE_EXTENSIONS)
-                                || MimeInspector.isMatchingMimeTypeFromMagicNumber(file1, DicomMediaIO.MIMETYPE)) {
+                                || MimeInspector.isMatchingMimeTypeFromMagicNumber(file1, DicomMediaIO.DICOM_MIMETYPE)) {
                             DicomMediaIO loader = new DicomMediaIO(file1);
                             if (loader.isReadableDicom()) {
                                 ViewerPluginBuilder.openSequenceInDefaultPlugin(loader.getMediaSeries(), dicomModel, false, false);
