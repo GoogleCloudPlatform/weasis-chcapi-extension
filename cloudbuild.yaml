@@ -7,9 +7,9 @@ steps:
 - name: "gcr.io/cloud-builders/git"
   args:
   - "checkout"
-  - "tags/3.0.4"
+  - "tags/v3.6.0"
   dir: "weasis"
-- name: "maven:3.6.0-jdk-8"
+- name: "maven:3.6.3-jdk-14"
   volumes:
   - name: "mavenLocal"
     path: "/root/.m2"
@@ -17,7 +17,7 @@ steps:
   - "mvn"
   - "install"
   dir: "weasis"
-- name: "maven:3.6.0-jdk-8"
+- name: "maven:3.6.3-jdk-14"
   volumes:
   - name: "mavenLocal"
     path: "/root/.m2"

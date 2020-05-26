@@ -23,6 +23,7 @@ import org.mockito.stubbing.Answer;
 import org.mockito.invocation.InvocationOnMock;
 
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.weasis.dicom.google.api.model.StudyQuery;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -40,6 +41,7 @@ import static org.junit.Assert.assertEquals;
  * 
  * @author Mikhail Ukhlin
  */
+@PowerMockIgnore("javax.swing.*")
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(GoogleAPIClient.class)
 public class GoogleAPIClientTest {

@@ -5,7 +5,7 @@
     <parent>
         <artifactId>weasis-dicom-parent</artifactId>
         <groupId>org.weasis.dicom</groupId>
-        <version>3.0.4</version>
+        <version>3.6.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>weasis-chcapi-extension</artifactId>
@@ -18,7 +18,7 @@
         <jackson.version>2.9.10.4</jackson.version>
         <jdatepicker.version>1.3.4</jdatepicker.version>
         <powermock.version>2.0.2</powermock.version>
-        <weasis.version>3.0.4</weasis.version>
+        <weasis.version>3.6.0</weasis.version>
     </properties>
 
     <build>
@@ -37,6 +37,11 @@
                             org.apache.avalon.*;resolution:=optional,
                             org.apache.log.*;resolution:=optional,
                             org.apache.log4j.*;resolution:=optional,
+                            com.google.appengine.api;resolution:=optional,
+                            com.google.apphosting.api;resolution:=optional,
+                            io.grpc.override;resolution:=optional,
+                            javax.naming.*;resolution:=optional,
+                            org.ietf.jgss;resolution:=optional,
                             *
                         </Import-Package>
                         <Embed-Dependency>*;scope=compile;inline=true</Embed-Dependency>

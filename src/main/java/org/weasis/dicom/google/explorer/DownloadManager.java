@@ -114,7 +114,7 @@ public class DownloadManager {
 
                     if (file1.canRead()) {
                         if (FileUtil.isFileExtensionMatching(file1, DicomCodec.FILE_EXTENSIONS)
-                                || MimeInspector.isMatchingMimeTypeFromMagicNumber(file1, DicomMediaIO.MIMETYPE)) {
+                                || MimeInspector.isMatchingMimeTypeFromMagicNumber(file1, DicomMediaIO.DICOM_MIMETYPE)) {
                             DicomMediaIO loader = new DicomMediaIO(file1);
                             if (loader.isReadableDicom()) {
                                 ViewerPluginBuilder.openSequenceInDefaultPlugin(loader.getMediaSeries(), dicomModel, false, false);
