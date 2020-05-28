@@ -32,20 +32,17 @@ See https://cloud.google.com/healthcare/docs/ to get started.
 * Follow instructions at [installing
   plug-ins](https://nroduit.github.io/en/basics/customize/build-plugins/#install-plug-ins)
   to add this plugin to Weasis.
-* Copy your client_secrets.json to weasis-portable root folder (or configure the path of the json file with the property "google.client.secret" in conf/ext-config.properties
-  Example for the web distribution: google.client.secret={felix.cache.rootdir}/.weasis/client_secrets.json
 * Run Weasis Viewer executable
 * Switch to **_Google Dicom Explorer_** tab and login using your Google Account
-
-NOTE: If you're running on Linux and find that Weasis is stuck loading plugins,
-check the terminal output for a link to sign-in with your Google account.
+> NOTE: If you face with some issues when using the plugin, you should remove .Weasis folder wich may cache previous or 
+> incorrect settings for the plugin in Weasis.
 
 ### Building plugin
 
 If you're just trying to run the tool, please see the instructions above. If you
 need to recompile the plugin for any reason here are the steps to do so.
 
-Weasis requires JDK8.
+Weasis requires JDK14.
 Plugin depends on core Weasis API, that's why you have to clone, build and install core Weasis modules to
 your local Maven repository first
 For this purpose follow instructions at [building Weasis](https://nroduit.github.io/en/getting-started/building-weasis/).
@@ -54,7 +51,7 @@ Detailed build instruction can be found at
 [building Weasis plugins](https://nroduit.github.io/en/basics/customize/build-plugins/)
 Clone this repository and execute following script:
 ```bash
-cd google-healthcare-weasis-plugin
+cd weasis-chcapi-extension
 
 ## build plugin
 mvn clean install
