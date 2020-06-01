@@ -252,7 +252,11 @@ public class GoogleAPIClient {
                 continue;
             }
             for (Project project : response.getProjects()) {
-                result.add(new org.weasis.dicom.google.api.model.ProjectDescriptor(project.getName(), project.getProjectId()));
+                String name = project.getName();
+                String projectId = project.getProjectId();
+                if (name != null && projectId != null) {
+                    result.add(new org.weasis.dicom.google.api.model.ProjectDescriptor(name, projectId));
+                }
             }
             request.setPageToken(response.getNextPageToken());
         } while (response.getNextPageToken() != null);

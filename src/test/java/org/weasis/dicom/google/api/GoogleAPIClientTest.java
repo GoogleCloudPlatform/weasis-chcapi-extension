@@ -14,6 +14,14 @@
 
 package org.weasis.dicom.google.api;
 
+import com.google.api.services.cloudresourcemanager.CloudResourceManager;
+import com.google.api.services.cloudresourcemanager.CloudResourceManager.Projects;
+import com.google.api.services.cloudresourcemanager.model.ListProjectsResponse;
+import com.google.api.services.cloudresourcemanager.model.Project;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.junit.Test;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
@@ -25,6 +33,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.weasis.dicom.google.api.model.ProjectDescriptor;
 import org.weasis.dicom.google.api.model.StudyQuery;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
@@ -35,6 +44,8 @@ import com.google.api.client.http.HttpResponseException;
 import com.google.api.client.http.HttpResponseException.Builder;
 
 import static org.junit.Assert.assertEquals;
+import static org.powermock.api.mockito.PowerMockito.mock;
+import static org.powermock.api.mockito.PowerMockito.when;
 
 /**
  * Tests for {@link GoogleAPIClient} class.
@@ -136,5 +147,44 @@ public class GoogleAPIClientTest {
       query.setPageSize(50);
       assertEquals("?limit=50&offset=100",GoogleAPIClient.formatQuery(query));
   }
-  
+
+    @Test
+    public void testShouldReturnProjectsWithNotNullNamesAndId() throws Exception {
+      // Given
+      GoogleAPIClient client = PowerMockito.spy(
+          GoogleAPIClientFactory.getInstance().createGoogleClient());
+      Mockito.doReturn("TEST").when(client).signIn();
+      Field cloudResourceManagerField = GoogleAPIClient.class.getDeclaredField("cloudResourceManager");
+      cloudResourceManagerField.setAccessible(true);
+      CloudResourceManager cloudResourceManager = mock(CloudResourceManager.class);
+      cloudResourceManagerField.set(null, cloudResourceManager);
+      Projects projectsMock = mock(Projects.class);
+      when(cloudResourceManager.projects()).thenReturn(projectsMock);
+      Projects.List listMock = mock(Projects.List.class);
+      when(projectsMock.list()).thenReturn(listMock);
+      ListProjectsResponse response = new ListProjectsResponse();
+
+      // First project
+      Project project1 = new Project();
+      project1.setName("Project1");
+      project1.setProjectId("id1");
+      // Second with null name
+      Project project2 = new Project();
+      project2.setName(null);
+      project2.setProjectId("id2");
+      // Third with null projectId
+      Project project3 = new Project();
+      project3.setName("Project3");
+      project3.setProjectId(null);
+      List<Project> projects = new ArrayList<>(Arrays.asList(project1, project2, project3));
+
+      response.setProjects(projects);
+      when(listMock.execute()).thenReturn(response);
+
+      // When
+      List<ProjectDescriptor> allProjects = client.fetchProjects();
+
+      // Then
+      assertEquals(1,allProjects.size());
+    }
 }
