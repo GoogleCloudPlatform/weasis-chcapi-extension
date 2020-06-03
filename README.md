@@ -39,7 +39,13 @@ See https://cloud.google.com/healthcare/docs/ to get started.
 
 #### Using your own OAuth client
 
-The plugin comes with it's own OAuth Client ID for ease of installation, but you can substitute your own if required (e.g. your organization has OAuth policy restriction on external apps). To do this go to the [Google API Console](https://console.developers.google.com/) and create a set of OAuth 2.0 credentials using the type "Other" and make sure to whitelist the scopes `.../auth/cloud-healthcare` and `.../auth/cloudplatformprojects.readonly`. Then download the credentials files in JSON format, name the file `client_secrets.json` and move it to weasis-portable root folder (or configure the path of the json file with the property `google.client.secret` in `conf/ext-config.properties`.
+The plugin comes with it's own OAuth Client ID for ease of installation, but you can substitute 
+your own if required (e.g. your organization has OAuth policy restriction on external apps). To do 
+this go to the [Google API Console](https://console.developers.google.com/) and create a set of 
+OAuth 2.0 credentials using the type "Other" and make sure to whitelist the scopes 
+`.../auth/cloud-healthcare` and `.../auth/cloudplatformprojects.readonly`. Then download the 
+credentials files in JSON format, name the file `client_secrets.json` and move it to conf
+folder, next to the ext-config.properties file.
 
 ### Building plugin
 
