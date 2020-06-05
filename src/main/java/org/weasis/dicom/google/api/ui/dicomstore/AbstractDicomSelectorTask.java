@@ -40,7 +40,7 @@ public abstract class AbstractDicomSelectorTask<T> extends SwingWorker<T, Void> 
             onCompleted(result);
         } catch (ExecutionException ex) {
             LOGGER.error("Error on dicom task", ex.getCause());
-            JOptionPane.showMessageDialog(null, "Unexpected error on fetching google api: " + ex.getCause().getMessage());
+            JOptionPane.showMessageDialog(null, ex.getCause().getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         } catch (InterruptedException ex) {
             LOGGER.error("Interrupted", ex);
         }

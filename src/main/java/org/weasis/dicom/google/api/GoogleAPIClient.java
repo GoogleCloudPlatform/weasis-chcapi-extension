@@ -16,6 +16,7 @@ package org.weasis.dicom.google.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonObject;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -339,10 +340,14 @@ public class GoogleAPIClient {
     }
 
     public List<Dataset> fetchDatasets(Location location) throws Exception {
-        String url = GOOGLE_API_BASE_PATH + "/projects/" + location.getParent().getId() + "/locations/" + location.getId() + "/datasets";
+        String locationId = location.getId();
+        String url = GOOGLE_API_BASE_PATH + "/projects/" + location.getParent().getId() + "/locations/" + locationId + "/datasets";
         String data = executeGetRequest(url).parseAsString();
         JsonParser parser = new JsonParser();
         JsonElement jsonTree = parser.parse(data);
+        if (((JsonObject) jsonTree).size() == 0) {
+          throw new Exception("No Datasets in " + locationId + " location");
+        }
         JsonArray jsonObject = jsonTree.getAsJsonObject().get("datasets").getAsJsonArray();
         return StreamSupport.stream(jsonObject.spliterator(), false)
                 .map(obj -> obj.getAsJsonObject().get("name").getAsString())
@@ -352,13 +357,17 @@ public class GoogleAPIClient {
     }
 
     public List<DicomStore> fetchDicomstores(Dataset dataset) throws Exception {
+        String datasetName = dataset.getName();
         String url = GOOGLE_API_BASE_PATH
                 + "/projects/" + dataset.getProject().getId()
                 + "/locations/" + dataset.getParent().getId()
-                + "/datasets/" + dataset.getName() + "/dicomStores";
+                + "/datasets/" + datasetName + "/dicomStores";
         String data = executeGetRequest(url).parseAsString();
         JsonParser parser = new JsonParser();
         JsonElement jsonTree = parser.parse(data);
+        if (((JsonObject) jsonTree).size() == 0) {
+          throw new Exception("No DICOM Stores in " + datasetName + " Dataset");
+        }
         JsonArray jsonObject = jsonTree.getAsJsonObject().get("dicomStores").getAsJsonArray();
 
         return StreamSupport.stream(jsonObject.spliterator(), false)
