@@ -14,10 +14,20 @@
 
 package org.weasis.dicom.google.api;
 
+import com.google.api.client.http.HttpRequest;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.http.LowLevelHttpRequest;
+import com.google.api.client.http.LowLevelHttpResponse;
+import com.google.api.client.json.Json;
+import com.google.api.client.testing.http.HttpTesting;
+import com.google.api.client.testing.http.MockHttpTransport;
+import com.google.api.client.testing.http.MockLowLevelHttpRequest;
+import com.google.api.client.testing.http.MockLowLevelHttpResponse;
 import com.google.api.services.cloudresourcemanager.CloudResourceManager;
 import com.google.api.services.cloudresourcemanager.CloudResourceManager.Projects;
 import com.google.api.services.cloudresourcemanager.model.ListProjectsResponse;
 import com.google.api.services.cloudresourcemanager.model.Project;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,6 +43,9 @@ import org.mockito.invocation.InvocationOnMock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.weasis.dicom.google.api.model.Dataset;
+import org.weasis.dicom.google.api.model.DicomStore;
+import org.weasis.dicom.google.api.model.Location;
 import org.weasis.dicom.google.api.model.ProjectDescriptor;
 import org.weasis.dicom.google.api.model.StudyQuery;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -148,43 +161,197 @@ public class GoogleAPIClientTest {
       assertEquals("?limit=50&offset=100",GoogleAPIClient.formatQuery(query));
   }
 
-    @Test
-    public void testShouldReturnProjectsWithNotNullNamesAndId() throws Exception {
-      // Given
-      GoogleAPIClient client = PowerMockito.spy(
-          GoogleAPIClientFactory.getInstance().createGoogleClient());
-      Mockito.doReturn("TEST").when(client).signIn();
-      Field cloudResourceManagerField = GoogleAPIClient.class.getDeclaredField("cloudResourceManager");
-      cloudResourceManagerField.setAccessible(true);
-      CloudResourceManager cloudResourceManager = mock(CloudResourceManager.class);
-      cloudResourceManagerField.set(null, cloudResourceManager);
-      Projects projectsMock = mock(Projects.class);
-      when(cloudResourceManager.projects()).thenReturn(projectsMock);
-      Projects.List listMock = mock(Projects.List.class);
-      when(projectsMock.list()).thenReturn(listMock);
-      ListProjectsResponse response = new ListProjectsResponse();
+  @Test
+  public void testShouldReturnProjectsWithNotNullNamesAndIds() throws Exception {
+    // Given
+    GoogleAPIClient client = PowerMockito.spy(
+        GoogleAPIClientFactory.getInstance().createGoogleClient());
+    Mockito.doReturn("TEST").when(client).signIn();
+    Field cloudResourceManagerField = GoogleAPIClient.class
+        .getDeclaredField("cloudResourceManager");
+    cloudResourceManagerField.setAccessible(true);
+    CloudResourceManager cloudResourceManager = mock(CloudResourceManager.class);
+    cloudResourceManagerField.set(null, cloudResourceManager);
+    Projects projectsMock = mock(Projects.class);
+    when(cloudResourceManager.projects()).thenReturn(projectsMock);
+    Projects.List listMock = mock(Projects.List.class);
+    when(projectsMock.list()).thenReturn(listMock);
+    ListProjectsResponse response = new ListProjectsResponse();
 
-      // First project
-      Project project1 = new Project();
-      project1.setName("Project1");
-      project1.setProjectId("id1");
-      // Second with null name
-      Project project2 = new Project();
-      project2.setName(null);
-      project2.setProjectId("id2");
-      // Third with null projectId
-      Project project3 = new Project();
-      project3.setName("Project3");
-      project3.setProjectId(null);
-      List<Project> projects = new ArrayList<>(Arrays.asList(project1, project2, project3));
+    // First project
+    Project project1 = new Project();
+    project1.setName("Project1");
+    project1.setProjectId("id1");
+    // Second with null name
+    Project project2 = new Project();
+    project2.setName(null);
+    project2.setProjectId("id2");
+    // Third with null projectId
+    Project project3 = new Project();
+    project3.setName("Project3");
+    project3.setProjectId(null);
+    List<Project> projects = new ArrayList<>(Arrays.asList(project1, project2, project3));
 
-      response.setProjects(projects);
-      when(listMock.execute()).thenReturn(response);
+    response.setProjects(projects);
+    when(listMock.execute()).thenReturn(response);
 
-      // When
-      List<ProjectDescriptor> allProjects = client.fetchProjects();
+    // When
+    List<ProjectDescriptor> allProjects = client.fetchProjects();
 
-      // Then
-      assertEquals(1,allProjects.size());
-    }
+    // Then
+    assertEquals(1, allProjects.size());
+  }
+
+  @Test(expected = Exception.class)
+  public void testFetchDatasetsShouldReturnExceptionIfResponseContainZeroDatasets()
+      throws Exception {
+    // Given
+    final GoogleAPIClient client = PowerMockito.spy(
+        GoogleAPIClientFactory.getInstance().createGoogleClient());
+    HttpTransport transport = new MockHttpTransport() {
+      @Override
+      public LowLevelHttpRequest buildRequest(String method, String url) throws IOException {
+        return new MockLowLevelHttpRequest() {
+          @Override
+          public LowLevelHttpResponse execute() throws IOException {
+            MockLowLevelHttpResponse response = new MockLowLevelHttpResponse();
+            response.setStatusCode(200);
+            response.setContentType(Json.MEDIA_TYPE);
+            response.setContent("{}");
+            return response;
+          }
+        };
+      }
+    };
+    HttpRequest request = transport.createRequestFactory()
+        .buildGetRequest(HttpTesting.SIMPLE_GENERIC_URL);
+    HttpResponse response = request.execute();
+    PowerMockito.doReturn(response).when(client, "executeGetRequest", Mockito.any());
+    ProjectDescriptor projectDescriptor = new ProjectDescriptor("Test-1", "1");
+    Location location = new Location(projectDescriptor, "projects/1/locations/1", "1");
+
+    // Then
+    client.fetchDatasets(location);
+  }
+
+  @Test
+  public void testFetchDatasetsShouldReturnDatasetsIfResponseContainDatasets() throws Exception {
+    // Given
+    final GoogleAPIClient client = PowerMockito.spy(
+        GoogleAPIClientFactory.getInstance().createGoogleClient());
+    HttpTransport transport = new MockHttpTransport() {
+      @Override
+      public LowLevelHttpRequest buildRequest(String method, String url) throws IOException {
+        return new MockLowLevelHttpRequest() {
+          @Override
+          public LowLevelHttpResponse execute() throws IOException {
+            MockLowLevelHttpResponse response = new MockLowLevelHttpResponse();
+            response.setStatusCode(200);
+            response.setContentType(Json.MEDIA_TYPE);
+            response.setContent("{\n"
+                + "  \"datasets\": [\n"
+                + "    {\n"
+                + "      \"name\": \"projects/1/locations/1/datasets/Test-1\"\n"
+                + "    },\n"
+                + "    {\n"
+                + "      \"name\": \"projects/1/locations/1/datasets/Test-2\"\n"
+                + "    }\n"
+                + "  ]\n"
+                + "}");
+            return response;
+          }
+        };
+      }
+    };
+    HttpRequest request = transport.createRequestFactory()
+        .buildGetRequest(HttpTesting.SIMPLE_GENERIC_URL);
+    HttpResponse response = request.execute();
+    PowerMockito.doReturn(response).when(client, "executeGetRequest", Mockito.any());
+    ProjectDescriptor projectDescriptor = new ProjectDescriptor("Test-1", "1");
+    Location location = new Location(projectDescriptor, "projects/1/locations/1", "1");
+
+    // When
+    List<Dataset> datasetList = client.fetchDatasets(location);
+
+    // Then
+    assertEquals(2, datasetList.size());
+  }
+
+  @Test(expected = Exception.class)
+  public void testFetchDicomstoresShouldReturnExceptionIfResponseContainZeroDicomstores()
+      throws Exception {
+    // Given
+    final GoogleAPIClient client = PowerMockito.spy(
+        GoogleAPIClientFactory.getInstance().createGoogleClient());
+    HttpTransport transport = new MockHttpTransport() {
+      @Override
+      public LowLevelHttpRequest buildRequest(String method, String url) throws IOException {
+        return new MockLowLevelHttpRequest() {
+          @Override
+          public LowLevelHttpResponse execute() throws IOException {
+            MockLowLevelHttpResponse response = new MockLowLevelHttpResponse();
+            response.setStatusCode(200);
+            response.setContentType(Json.MEDIA_TYPE);
+            response.setContent("{}");
+            return response;
+          }
+        };
+      }
+    };
+    HttpRequest request = transport.createRequestFactory()
+        .buildGetRequest(HttpTesting.SIMPLE_GENERIC_URL);
+    HttpResponse response = request.execute();
+    PowerMockito.doReturn(response).when(client, "executeGetRequest", Mockito.any());
+    ProjectDescriptor projectDescriptor = new ProjectDescriptor("Test-1", "1");
+    Location location = new Location(projectDescriptor, "projects/1/locations/1", "1");
+    Dataset dataset = new Dataset(location, "projects/1/locations/1/datasets/Test-1");
+
+    // Then
+    client.fetchDicomstores(dataset);
+  }
+
+  @Test
+  public void testFetchDicomstoresShouldReturnDicomstoresIfResponseContainDicomstores()
+      throws Exception {
+    // Given
+    final GoogleAPIClient client = PowerMockito.spy(
+        GoogleAPIClientFactory.getInstance().createGoogleClient());
+    HttpTransport transport = new MockHttpTransport() {
+      @Override
+      public LowLevelHttpRequest buildRequest(String method, String url) throws IOException {
+        return new MockLowLevelHttpRequest() {
+          @Override
+          public LowLevelHttpResponse execute() throws IOException {
+            MockLowLevelHttpResponse response = new MockLowLevelHttpResponse();
+            response.setStatusCode(200);
+            response.setContentType(Json.MEDIA_TYPE);
+            response.setContent("{\n"
+                + "  \"dicomStores\": [\n"
+                + "    {\n"
+                + "      \"name\": \"projects/1/locations/1/datasets/Test-1/dicomStores/Test-1\"\n"
+                + "    },\n"
+                + "    {\n"
+                + "      \"name\": \"projects/1/locations/1/datasets/Test-1/dicomStores/Test-2\"\n"
+                + "    }\n"
+                + "  ]\n"
+                + "}");
+            return response;
+          }
+        };
+      }
+    };
+    HttpRequest request = transport.createRequestFactory()
+        .buildGetRequest(HttpTesting.SIMPLE_GENERIC_URL);
+    HttpResponse response = request.execute();
+    PowerMockito.doReturn(response).when(client, "executeGetRequest", Mockito.any());
+    ProjectDescriptor projectDescriptor = new ProjectDescriptor("Test-1", "1");
+    Location location = new Location(projectDescriptor, "projects/1/locations/1", "1");
+    Dataset dataset = new Dataset(location, "projects/1/locations/1/datasets/Test-1");
+
+    // When
+    List<DicomStore> dicomStoreList = client.fetchDicomstores(dataset);
+
+    // Then
+    assertEquals(2, dicomStoreList.size());
+  }
 }
