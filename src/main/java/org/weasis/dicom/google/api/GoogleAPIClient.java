@@ -16,7 +16,9 @@ package org.weasis.dicom.google.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.weasis.core.api.service.BundleTools;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import org.weasis.dicom.google.api.model.Dataset;
 import org.weasis.dicom.google.api.model.DicomStore;
 import org.weasis.dicom.google.api.model.Location;
@@ -70,10 +72,8 @@ public class GoogleAPIClient {
      * Directory to store user credentials.
      */
     private static final java.io.File DATA_STORE_DIR = new java.io.File(System.getProperty("user.home"), ".weasis/google_auth");
-    private static final String GOOGLE_API_BASE_PATH =
-            BundleTools.SYSTEM_PREFERENCES.getProperty("weasis.google.api.url", "https://healthcare.googleapis.com/v1beta1");
-    private static final String SECRETS_FILE_NAME =
-            BundleTools.SYSTEM_PREFERENCES.getProperty("weasis.google.secrets.filename", "client_secrets.json");
+    private static final String GOOGLE_API_BASE_PATH  = "https://healthcare.googleapis.com/v1beta1";
+    private static final String SECRETS_FILE_NAME = "client_secrets.json";
     /**
      * Global instance of the {@link DataStoreFactory}. The best practice is to make
      * it a single globally shared instance across your application.
@@ -137,22 +137,19 @@ public class GoogleAPIClient {
             OAuth2Browser.INSTANCE).authorize("user");
     }
 
-    private static InputStream getSecret() throws IOException {
-        String file = System.getProperty("google.client.secret");
-        if (file != null) {
-            return new FileInputStream(file);
-        }
-
-        String portableDir = System.getProperty("weasis.portable.dir");
-        if (portableDir != null) {
-            File portableSecrets = new File(portableDir, SECRETS_FILE_NAME);
-            if (portableSecrets.exists() && !portableSecrets.isDirectory()) {
-                return new FileInputStream(portableSecrets);
-            }
-        }
-
-        return GoogleAPIClient.class.getResource("/" + SECRETS_FILE_NAME).openStream();
+  private static InputStream getSecret() throws IOException {
+    String extendedProperties = System.getProperty("felix.extended.config.properties")
+        .replace("file:", "");
+    Path extendedPropertiesFolderPath = Paths.get(extendedProperties).getParent();
+    Path clientSecretsFile = extendedPropertiesFolderPath.resolve(SECRETS_FILE_NAME);
+    if (Files.exists(clientSecretsFile)) {
+      System.out.println("Loading user's client_secret.json");
+      return Files.newInputStream(clientSecretsFile);
+    } else {
+      System.out.println("Loading embedded client_secret.json");
+      return GoogleAPIClient.class.getResource("/" + SECRETS_FILE_NAME).openStream();
     }
+  }
 
     public String getAccessToken() {
         if (accessToken == null) {
