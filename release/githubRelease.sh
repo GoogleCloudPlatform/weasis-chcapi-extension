@@ -31,11 +31,12 @@ echo "{\"tag_name\": \"${TAG_NAME}\",\"name\": \"${TAG_NAME}\"}" > request.json
 # Create a request for creating a release on GitHub page
 readonly resp_file="response.json"
 response_code="$(curl -# -X POST \
+-H "Authorization: Bearer ${TOKEN}" \
 -H "Content-Type:application/json" \
 -H "Accept:application/json" \
 -w "%{http_code}" \
 --data-binary "@/workspace/request.json" \
-"https://api.github.com/repos/${github_user}/${github_repo}/releases?access_token=${TOKEN}" \
+"https://api.github.com/repos/${github_user}/${github_repo}/releases" \
 -o "${resp_file}")"
 # Check status code
 if [[ "${response_code}" != 201 ]]; then
