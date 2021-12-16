@@ -141,21 +141,19 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-	    <groupId>org.powermock</groupId>
-	    <artifactId>powermock-module-junit4</artifactId>
-	    <version>${powermock.version}</version><!--$NO-MVN-MAN-VER$-->
-	    <scope>test</scope>
-	</dependency>
-	<dependency>
-	    <groupId>org.powermock</groupId>
-	    <artifactId>powermock-api-mockito2</artifactId>
-	    <version>${powermock.version}</version><!--$NO-MVN-MAN-VER$-->
-	    <scope>test</scope>
-	</dependency>
-	<dependency>
-	    <groupId>org.apache.logging.log4j</groupId>
-	    <artifactId>log4j-core</artifactId>
-	    <version>2.16.0</version>
-	</dependency>
-    </dependencies>
+            <version>${powermock.version}</version><!--$NO-MVN-MAN-VER$-->
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-api-mockito2</artifactId>
+            <version>${powermock.version}</version><!--$NO-MVN-MAN-VER$-->
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>2.16.0</version>
+        </dependency>
+      </dependencies>
 </project>
