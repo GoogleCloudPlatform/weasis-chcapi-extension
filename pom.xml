@@ -141,6 +141,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-module-junit4</artifactId>
             <version>${powermock.version}</version><!--$NO-MVN-MAN-VER$-->
             <scope>test</scope>
         </dependency>
