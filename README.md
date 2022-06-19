@@ -3,6 +3,8 @@
 Plugin enables Weasis Viewer users access to [Google Cloud Healthcare API](https://cloud.google.com/healthcare) DICOM data.
 It utilizes [DICOMweb REST API](https://cloud.google.com/healthcare/docs/how-tos/dicomweb) to interact with Google Cloud services.
 
+:warning: Since [Weasis](https://nroduit.github.io/en/getting-started/) 3.8, it is no longer necessary to install the weasis-chcapi-extension plugin to access to Google Cloud Healthcare API. Downloading exams from a Google repository can be done directly through the DICOM import module with a [DICOMWeb node configuration](https://nroduit.github.io/en/tutorials/dicomweb-config/).
+
 ### Features
 
 * Login using your Google account
