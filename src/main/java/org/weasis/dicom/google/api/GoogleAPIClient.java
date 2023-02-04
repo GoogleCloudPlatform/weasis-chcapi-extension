@@ -20,12 +20,13 @@ import com.google.gson.JsonObject;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import org.weasis.dicom.google.api.model.StudyQuery;
+
 import org.weasis.dicom.google.api.model.Dataset;
 import org.weasis.dicom.google.api.model.DicomStore;
 import org.weasis.dicom.google.api.model.Location;
 import org.weasis.dicom.google.api.model.ProjectDescriptor;
 import org.weasis.dicom.google.api.model.StudyModel;
-import org.weasis.dicom.google.api.model.StudyQuery;
 import org.weasis.dicom.google.api.ui.OAuth2Browser;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
