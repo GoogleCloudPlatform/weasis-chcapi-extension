@@ -1,3 +1,6 @@
+> [!IMPORTANT]  
+> Weasis now supports DICOMweb. This makes this extension obsolete. This repository has been archived and will not receive further updates. For details on how to integrate Weasis with DICOMweb end-points from Google Cloud Healthcare, please check https://weasis.org/en/tutorials/dicomweb-config/#google-cloud-healthcare-api
+
 ## About Weasis Google DICOM Plugin
 
 Plugin enables Weasis Viewer users access to [Google Cloud Healthcare API](https://cloud.google.com/healthcare) DICOM data.
